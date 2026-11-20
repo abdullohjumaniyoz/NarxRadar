@@ -3,8 +3,11 @@
 // API kaliti faqat shu yerda (Netlify muhit oʻzgaruvchisi) turadi, telefonga hech qachon yuborilmaydi.
 //
 // Muhit oʻzgaruvchilari (Netlify → Site configuration → Environment variables):
-//   ANTHROPIC_API_KEY     — majburiy emas; boʻlmasa AI oʻchiq, baza baribir ishlaydi
-//   CLAUDE_MODEL          — standart: claude-haiku-5-5 (tez va arzon)
+//   ANTHROPIC_API_KEY     — Claude kaliti (pullik, juda arzon). Boʻlsa, shu ishlatiladi
+//   GEMINI_API_KEY        — Google Gemini kaliti (bepul tarif, aistudio.google.com). Claude kaliti boʻlmasa ishlatiladi
+//   CLAUDE_MODEL          — standart: claude-haiku-5-5
+//   GEMINI_MODEL          — standart: gemini-3.8-flash
+//   Ikkalasi ham boʻlmasa AI oʻchiq, baza baribir ishlaydi
 //   DAILY_AI_LIMIT        — kunlik AI soʻrovlari chegarasi, standart 800
 //   DAILY_REPORTS_PER_IP  — bitta IP dan kunlik xabar chegarasi, standart 60
 
@@ -13,6 +16,9 @@ import { createHash } from "node:crypto";
 
 const KEY = process.env.ANTHROPIC_API_KEY || "";
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
+const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+const PROVIDER = KEY ? "claude" : GEMINI_KEY ? "gemini" : null;
 const DAILY_AI = Number(process.env.DAILY_AI_LIMIT || 800);
 const DAILY_PER_IP = Number(process.env.DAILY_REPORTS_PER_IP || 60);
 
@@ -51,6 +57,27 @@ async function claude(content, maxTokens = 700) {
   const j = await r.json();
   return (j.content || []).filter(b => b.type === "text").map(b => b.text).join("");
 }
+/* ---------- Gemini (bepul tarif) ---------- */
+async function gemini(content, maxTokens = 700) {
+  const parts = content.map(c => c.type === "image" ? { inline_data: { mime_type: c.source.media_type, data: c.source.data } } : { text: c.text });
+  const body = thinking => JSON.stringify({
+    contents: [{ role: "user", parts }],
+    generationConfig: { temperature: 0.2, maxOutputTokens: Math.max(2048, maxTokens * 3), ...(thinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}) }
+  });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
+  const call = thinking => fetch(url, { method: "POST", headers: { "x-goog-api-key": GEMINI_KEY, "content-type": "application/json" }, body: body(thinking) });
+  let r = await call(true);
+  if (r.status === 400) r = await call(false); /* model "thinkingLevel"ni qoʻllamasa, usiz qayta urinadi */
+  if (!r.ok) {
+    const t = await r.text().catch(() => "");
+    const err = new Error(`gemini ${r.status}: ${t.slice(0, 200)}`); err.status = r.status; throw err;
+  }
+  const j = await r.json();
+  const out = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+  return out.filter(p => p.text && !p.thought).map(p => p.text).join("");
+}
+const ai = (content, maxTokens) => (PROVIDER === "claude" ? claude(content, maxTokens) : gemini(content, maxTokens));
+
 function parseJSON(s) {
   const m = String(s || "").replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
   if (!m) return null;
@@ -138,7 +165,7 @@ export default async (req, context) => {
   const ip = (context && context.ip) || req.headers.get("x-nf-client-connection-ip") || "0";
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   try {
-    if (route === "health") return json({ ok: true, ai: !!KEY, db: true });
+    if (route === "health") return json({ ok: true, ai: !!PROVIDER, provider: PROVIDER, db: true });
     if (route === "reports" && req.method === "GET") {
       const items = url.searchParams.get("rebuild") === "1" ? await rebuild() : await listReports();
       return json({ items });
@@ -156,25 +183,25 @@ export default async (req, context) => {
     }
 
     if (!["read", "parse", "explain"].includes(route)) return json({ error: "not_found" }, 404);
-    if (!KEY) return json({ error: "no_ai" }, 503);
+    if (!PROVIDER) return json({ error: "no_ai" }, 503);
     if (!(await bump(`cap/${today()}`, DAILY_AI))) return json({ error: "rate_limited" }, 429);
 
     if (route === "read") {
       const { image, mime } = body;
       if (typeof image !== "string" || image.length < 100 || image.length > 4_000_000) return json({ error: "invalid" }, 400);
       const mt = ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(mime) ? mime : "image/jpeg";
-      const txt = await claude([{ type: "image", source: { type: "base64", media_type: mt, data: image } }, { type: "text", text: READ_PROMPT() }], 800);
+      const txt = await ai([{ type: "image", source: { type: "base64", media_type: mt, data: image } }, { type: "text", text: READ_PROMPT() }], 800);
       return json(parseJSON(txt) || { is_price_tag: false, items: [] });
     }
     if (route === "parse") {
       const text = str(body.text, 300);
       if (!text) return json({ error: "invalid" }, 400);
-      return json(parseJSON(await claude([{ type: "text", text: PARSE_PROMPT(text) }], 300)) || {});
+      return json(parseJSON(await ai([{ type: "text", text: PARSE_PROMPT(text) }], 300)) || {});
     }
     if (route === "explain") {
       const kind = body.kind === "index" ? "index" : "price";
       const ctx = JSON.stringify(body.ctx || {}).slice(0, 3000);
-      return json({ text: (await claude([{ type: "text", text: EXPLAIN_PROMPT(kind, ctx) }], 400)).trim().slice(0, 1500) });
+      return json({ text: (await ai([{ type: "text", text: EXPLAIN_PROMPT(kind, ctx) }], 400)).trim().slice(0, 1500) });
     }
     return json({ error: "not_found" }, 404);
   } catch (e) {
