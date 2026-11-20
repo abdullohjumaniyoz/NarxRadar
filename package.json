@@ -1,0 +1,28 @@
+{
+  "name": "narxradar",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "NarxRadar: narx monitoringi, indeks va soxta chegirmalarni aniqlash (PWA + Android + iOS)",
+  "scripts": {
+    "sync": "cap sync",
+    "android": "cap sync android && cap open android",
+    "ios": "cap sync ios && cap open ios",
+    "icons": "capacitor-assets generate --iconBackgroundColor \"#0a7c76\" --iconBackgroundColorDark \"#0a7c76\" --splashBackgroundColor \"#eef2f1\" --splashBackgroundColorDark \"#0c1517\""
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/camera": "8.2.6",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/geolocation": "8.2.4",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
+    "@netlify/blobs": "11.1.6"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.0"
+  }
+}

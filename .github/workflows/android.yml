@@ -1,0 +1,66 @@
+# Android ilovani GitHub serverida yigʻadi: kompyuterga Android Studio oʻrnatish shart emas.
+# Natija: Actions → oxirgi ishga tushirish → Artifacts → "NarxRadar-test-apk" (telefonga oʻrnatish uchun)
+# Imzo kaliti sozlansa, "NarxRadar-play-aab" ham chiqadi (Google Play'ga yuklash uchun).
+name: Android ilova
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.NARX_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: npm paketlarini oʻrnatish
+        run: npm ci
+
+      - name: Veb fayllarni Android loyihasiga koʻchirish
+        run: npx cap sync android
+
+      - name: Test APK yigʻish
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Test APK'ni saqlash
+        uses: actions/upload-artifact@v4
+        with:
+          name: NarxRadar-test-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Imzo kalitini tiklash
+        if: env.HAS_KEY == 'true'
+        run: echo "${{ secrets.NARX_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      - name: Google Play uchun AAB yigʻish
+        if: env.HAS_KEY == 'true'
+        working-directory: android
+        env:
+          NARX_KEYSTORE_PATH: ${{ runner.temp }}/upload.jks
+          NARX_KEYSTORE_PASSWORD: ${{ secrets.NARX_KEYSTORE_PASSWORD }}
+          NARX_KEY_ALIAS: ${{ secrets.NARX_KEY_ALIAS }}
+          NARX_KEY_PASSWORD: ${{ secrets.NARX_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: AAB'ni saqlash
+        if: env.HAS_KEY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: NarxRadar-play-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab

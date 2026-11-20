@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NarxRadar</title>
+<meta name="theme-color" content="#0a7c76">
+<meta name="description" content="Bozor va doʻkon narxlarini rasm yoki matn orqali tekshirish, narx indeksi va soxta chegirmalarni aniqlash">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NarxRadar">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Telefon ilovasi: yuqori panel + aylanadigan ekran + pastki menyu. Firuza koshin aksenti, sovuq kulrang fon, katta tugmalar. */
+  --bg:#eef2f1; --surface:#ffffff; --surface2:#f4f7f6; --ink:#13242a; --ink2:#53656a; --line:#d8e1df;
+  --accent:#0a7c76; --accent-ink:#ffffff; --accent-soft:#d6eeeb;
+  --good:#1b8048; --good-soft:#dcf1e4; --warn:#a96500; --warn-soft:#fbeacd; --crit:#bf2f29; --crit-soft:#f8dcda; --cheap:#1d5fae; --cheap-soft:#dae6f7;
+  --display:"Unbounded","Onest",system-ui,sans-serif;
+  --body:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --shadow:0 1px 2px rgba(19,36,42,.06),0 4px 14px rgba(19,36,42,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1517; --surface:#142124; --surface2:#1a2a2e; --ink:#e3eeec; --ink2:#9fb2b2; --line:#27393c;
+    --accent:#3dbfb4; --accent-ink:#04201d; --accent-soft:#163a37;
+    --good:#53c483; --good-soft:#15331f; --warn:#f0a63a; --warn-soft:#3a2a10; --crit:#ff7b71; --crit-soft:#3e1b19; --cheap:#73adf2; --cheap-soft:#152740;
+    --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1517; --surface:#142124; --surface2:#1a2a2e; --ink:#e3eeec; --ink2:#9fb2b2; --line:#27393c;
+  --accent:#3dbfb4; --accent-ink:#04201d; --accent-soft:#163a37;
+  --good:#53c483; --good-soft:#15331f; --warn:#f0a63a; --warn-soft:#3a2a10; --crit:#ff7b71; --crit-soft:#3e1b19; --cheap:#73adf2; --cheap-soft:#152740;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{text-wrap:balance;margin:0}
+.app{position:relative;width:100%;max-width:440px;height:100%;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+@media (min-width:560px){
+  body{align-items:center;padding:16px 0}
+  .app{height:min(920px,100%);border:1px solid var(--line);border-radius:30px;box-shadow:0 24px 70px rgba(10,30,35,.16)}
+}
+/* top bar */
+.top{display:flex;align-items:center;gap:10px;padding:calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 16px 10px;background:var(--surface);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:8px;flex:none}
+.logo b{font-family:var(--display);font-size:17px;letter-spacing:-.01em}
+.locchip{margin-left:auto;display:flex;align-items:center;gap:6px;max-width:62%;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);font-size:13px;font-weight:600;text-align:left}
+.locchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.locchip .dot{width:8px;height:8px;border-radius:50%;background:var(--ink2);flex:none}
+.locchip.ok .dot{background:var(--good)}
+.locchip.warn .dot{background:var(--warn)}
+/* views */
+.view{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.view[hidden]{display:none}
+.tabbar{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border-top:1px solid var(--line);padding:6px 4px calc(6px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;border:0;background:none;color:var(--ink2);font-size:11.5px;font-weight:600;border-radius:12px}
+.tabbar button svg{width:24px;height:24px}
+.tabbar button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+/* blocks */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.card h2{font-size:17px}
+.card h3{font-size:15px}
+.sub{color:var(--ink2);font-size:13.5px;margin:0}
+.muted{color:var(--ink2)}
+.small{font-size:13px}
+.hello h1{font-family:var(--display);font-size:22px;line-height:1.2;letter-spacing:-.01em}
+.hello p{margin:6px 0 0;color:var(--ink2)}
+.cta{display:grid;grid-template-columns:1.25fr 1fr;gap:10px}
+.cta button{border-radius:20px;padding:18px 14px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;text-align:left;font-weight:700;font-size:17px;line-height:1.2;min-height:132px}
+.cta button small{font-weight:500;font-size:13px;opacity:.85}
+.cta .cam{background:var(--accent);color:var(--accent-ink);border:0}
+.cta .write{background:var(--surface);border:1.5px solid var(--line)}
+.cta svg{width:34px;height:34px}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--accent);font-weight:600;font-size:14px;text-align:left}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px 16px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn svg,.btn2 svg{width:22px;height:22px;flex:none}
+.btn2{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:15px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface2);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.tile b{font-size:20px;font-weight:800}
+.tile span{font-size:12.5px;color:var(--ink2)}
+.big{font-family:var(--display);font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.unit{font-size:14px;font-weight:600;color:var(--ink2);font-family:var(--body)}
+.chg{font-size:13px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap}
+.chg.up{color:var(--crit);background:var(--crit-soft)}
+.chg.dn{color:var(--good);background:var(--good-soft)}
+.chg.eq{color:var(--ink2);background:var(--surface2)}
+/* verdict pills */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-weight:700;font-size:14px;white-space:nowrap}
+.pill svg{width:16px;height:16px}
+.pill.adolatli,.pill.haqiqiy{color:var(--good);background:var(--good-soft)}
+.pill.qimmat,.pill.chalgituvchi{color:var(--warn);background:var(--warn-soft)}
+.pill.juda,.pill.soxta{color:var(--crit);background:var(--crit-soft)}
+.pill.arzon{color:var(--cheap);background:var(--cheap-soft)}
+.pill.sm{padding:3px 9px;font-size:12.5px}
+.pill.lg{font-size:18px;padding:9px 16px}
+.pill.lg svg{width:20px;height:20px}
+.stripe{border-left:5px solid var(--line)}
+.stripe.adolatli,.stripe.haqiqiy{border-left-color:var(--good)}
+.stripe.qimmat,.stripe.chalgituvchi{border-left-color:var(--warn)}
+.stripe.juda,.stripe.soxta{border-left-color:var(--crit)}
+.stripe.arzon{border-left-color:var(--cheap)}
+/* lists */
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;text-align:left;width:100%}
+.li:last-child{border-bottom:0}
+.li .grow{flex:1;min-width:0}
+.li .t{font-weight:600}
+.li .s{font-size:12.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .r{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.li .p{font-weight:700}
+.ico{width:38px;height:38px;border-radius:12px;background:var(--surface2);display:grid;place-items:center;flex:none;font-weight:800;font-size:13px;color:var(--accent)}
+.cathead{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2);margin:8px 0 0}
+/* bars */
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:112px 1fr 76px;align-items:center;gap:8px;font-size:13px}
+.bar .track{height:10px;border-radius:6px;background:var(--surface2);overflow:hidden}
+.bar .fill{height:100%;border-radius:6px;background:var(--accent);opacity:.55}
+.bar.me .fill{opacity:1}
+.bar.me{font-weight:700}
+.bar .v{text-align:right}
+.cmp{display:flex;flex-direction:column;gap:8px}
+.cmp .bar{grid-template-columns:118px 1fr 84px}
+.cmp .bar.you .fill{background:var(--ink);opacity:.85}
+/* inputs */
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+input.in,select.in{width:100%;padding:14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:17px;color:var(--ink)}
+input.in.huge{font-size:20px;padding:16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--surface2);border-radius:14px;padding:4px;gap:4px}
+.seg button{border:0;background:none;padding:10px 4px;border-radius:10px;font-weight:600;font-size:14px;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.parse{display:flex;flex-wrap:wrap;gap:6px}
+.parse span{font-size:13px;padding:5px 10px;border-radius:10px;background:var(--surface2)}
+.parse span.ok{background:var(--good-soft);color:var(--good)}
+.parse span.no{background:var(--warn-soft);color:var(--warn)}
+.search{position:relative}
+.search input{padding-left:42px}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--ink2)}
+/* sheet */
+.sheet{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;z-index:20;transform:translateY(102%);transition:transform .28s ease;visibility:hidden}
+.sheet.open{transform:none;visibility:visible}
+.sheet header{display:flex;align-items:center;gap:10px;padding:calc(12px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 12px 12px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.sheet header h2{font-size:17px;flex:1}
+.iconbtn{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);display:grid;place-items:center}
+.iconbtn svg{width:22px;height:22px}
+.sheet .body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+.overlay{position:absolute;inset:0;background:var(--bg);z-index:30;display:flex;flex-direction:column;overflow-y:auto;padding:calc(28px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px))) 20px calc(20px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));gap:16px}
+.overlay[hidden]{display:none}
+/* steps */
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.step .st{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--surface2);color:var(--ink2)}
+.step.run .st{border:3px solid var(--accent-soft);border-top-color:var(--accent);background:none;animation:spin .9s linear infinite}
+.step.ok .st{background:var(--good);color:#fff}
+.step.bad .st{background:var(--warn);color:#fff}
+.step .st svg{width:15px;height:15px}
+.step small{display:block;font-weight:500;color:var(--ink2);font-size:13px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.step.run .st{animation:none}.sheet{transition:none}}
+.photo{width:100%;max-height:220px;object-fit:contain;border-radius:14px;background:var(--surface2)}
+.checks{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;gap:8px;font-size:14px;align-items:flex-start}
+.checks li svg{width:18px;height:18px;flex:none;margin-top:2px}
+.checks .ok svg{color:var(--good)}
+.checks .no svg{color:var(--warn)}
+.why{display:flex;flex-direction:column;gap:10px}
+.why .w{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:14px}
+.why .w b{font-weight:600}
+.why .w .pts{font-weight:700;color:var(--ink2);font-size:13px}
+.why .w .tx{grid-column:1/-1;color:var(--ink2);font-size:13.5px}
+.why .w .pb{grid-column:1/-1;height:6px;border-radius:4px;background:var(--surface2);overflow:hidden}
+.why .w .pb i{display:block;height:100%;background:var(--warn)}
+.meter{height:10px;border-radius:6px;background:var(--surface2);overflow:hidden}
+.meter i{display:block;height:100%}
+.note{font-size:13px;color:var(--ink2);background:var(--surface2);border-radius:12px;padding:10px 12px;margin:0}
+.note.warn{background:var(--warn-soft);color:var(--ink)}
+.ai{background:var(--accent-soft);border-radius:14px;padding:12px 14px;font-size:14.5px}
+.ai b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.pipe{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none;counter-reset:p}
+.pipe li{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:8px 0;font-size:14px;counter-increment:p}
+.pipe li::before{content:counter(p);width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
+.pipe li b{display:block}
+.uses{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.uses li{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:14px}
+.uses li .who{grid-column:2;font-size:12.5px;color:var(--accent);font-weight:700}
+.uses li .ic{grid-row:1/3;width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:13px}
+table.tb{width:100%;border-collapse:collapse;font-size:13px}
+table.tb th{text-align:left;color:var(--ink2);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line)}
+table.tb td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tb .r{text-align:right}
+.tbwrap{overflow-x:auto}
+.regiongrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.regiongrid button{padding:12px 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:600;font-size:14px;text-align:left}
+.regiongrid button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.spark{width:100%;height:90px}
+.toast{position:absolute;left:16px;right:16px;bottom:84px;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:14px;font-size:14px;z-index:40;box-shadow:var(--shadow)}
+.toast[hidden]{display:none}
+.empty{padding:14px;border:1.5px dashed var(--line);border-radius:14px;text-align:center;color:var(--ink2);font-size:14px}
+.onb-logo{display:flex;align-items:center;gap:10px}
+.onb-logo b{font-family:var(--display);font-size:24px}
+.onb h1{font-family:var(--display);font-size:24px;line-height:1.2}
+.feat{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.feat li{display:flex;gap:12px;align-items:flex-start;font-size:15px}
+.feat li .ico{width:40px;height:40px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="logo">
+      <svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="11" fill="var(--accent)"/><circle cx="20" cy="22" r="12" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" opacity=".5"/><circle cx="20" cy="22" r="6.5" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" opacity=".8"/><path d="M20 22 L30 12.5" stroke="var(--accent-ink)" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="22" r="2.5" fill="var(--accent-ink)"/></svg>
+      <b>NarxRadar</b>
+    </div>
+    <button class="locchip" id="locchip" aria-label="Joylashuv"><i class="dot"></i><span id="loctext">Joylashuv…</span></button>
+  </header>
+
+  <main class="view" id="v-asosiy" aria-label="Asosiy"></main>
+  <main class="view" id="v-narxlar" aria-label="Narxlar" hidden></main>
+  <main class="view" id="v-indeks" aria-label="Indeks" hidden></main>
+  <main class="view" id="v-chegirma" aria-label="Chegirma" hidden></main>
+  <main class="view" id="v-malumot" aria-label="Maʼlumot" hidden></main>
+
+  <nav class="tabbar" aria-label="Boʻlimlar">
+    <button data-tab="asosiy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Asosiy</button>
+    <button data-tab="narxlar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Narxlar</button>
+    <button data-tab="indeks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/></svg>Indeks</button>
+    <button data-tab="chegirma"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>Chegirma</button>
+    <button data-tab="malumot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Maʼlumot</button>
+  </nav>
+
+  <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <header><h2 id="sheet-title"></h2><button class="iconbtn" id="sheet-close" aria-label="Yopish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+    <div class="body" id="sheet-body"></div>
+  </section>
+
+  <section class="overlay onb" id="onb" hidden aria-label="Xush kelibsiz"></section>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <input type="file" id="f-cam" accept="image/*" capture="environment" class="sr" tabindex="-1" aria-hidden="true">
+  <input type="file" id="f-gal" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">
+</div>
+
+<script src="config.js"></script>
+<script>
+"use strict";
+/* ============ Rasmiy maʼlumot (narx.stat.uz, narxtahlil.uz) ============ */
+const REF0 = {"week":"2026-11-11","prev":"2026-11-04","yearAgo":"2025-11-12","fetched":"2026-11-20","products":[{"c":100,"n":"Guruch","u":"kg","p":14999,"w":32,"y":-853,"cat":"don","q":1.2243,"r":{"AND":15840,"BUX":15376,"FAR":15515,"JIZ":15016,"NAM":14466,"NAV":16468,"QAS":15047,"QQR":11173,"SAM":14767,"SIR":12802,"SUR":16466,"TOSS":17611,"TOS":15605,"XOR":13554},"rd":null},{"c":4001,"n":"Bugʻdoy uni, oliy nav","u":"kg","p":9425,"w":27,"y":603,"cat":"don","q":0.4341,"r":{"AND":9231,"BUX":9127,"FAR":9096,"JIZ":9939,"NAM":7952,"NAV":8896,"QAS":9967,"QQR":9560,"SAM":8836,"SIR":8541,"SUR":10353,"TOSS":10654,"TOS":10033,"XOR":8852},"rd":"2026-11-04"},{"c":4002,"n":"Bugʻdoy uni, 1-nav","u":"kg","p":6292,"w":23,"y":294,"cat":"don","q":0.4341,"r":{"AND":5897,"BUX":6055,"FAR":6335,"JIZ":6323,"NAM":5493,"NAV":6954,"QAS":6325,"QQR":5735,"SAM":6003,"SIR":5808,"SUR":6909,"TOSS":7434,"TOS":6949,"XOR":5876},"rd":null},{"c":114,"n":"Non (1-nav undan)","u":"kg","p":6377,"w":32,"y":192,"cat":"don","q":2.8779,"r":{"AND":6293,"BUX":6273,"FAR":6418,"JIZ":6628,"NAM":6822,"NAV":6444,"QAS":6488,"QQR":6334,"SAM":6387,"SIR":5976,"SUR":7550,"TOSS":5000,"TOS":5757,"XOR":6579},"rd":null},{"c":1180,"n":"Mol goʻshti","u":"kg","p":125891,"w":180,"y":18817,"cat":"gosht","q":1.3474,"r":{"AND":127331,"BUX":122403,"FAR":126566,"JIZ":128957,"NAM":121519,"NAV":121848,"QAS":127664,"QQR":115559,"SAM":128278,"SIR":124619,"SUR":132984,"TOSS":136596,"TOS":124917,"XOR":124217},"rd":null},{"c":120,"n":"Qoʻy goʻshti","u":"kg","p":137804,"w":327,"y":21041,"cat":"gosht","q":0.4575,"r":{"AND":142656,"BUX":123434,"FAR":146247,"JIZ":137568,"NAM":138105,"NAV":125874,"QAS":137026,"QQR":116104,"SAM":138877,"SIR":136002,"SUR":144890,"TOSS":146527,"TOS":136252,"XOR":133188},"rd":null},{"c":1220,"n":"Tovuq goʻshti","u":"kg","p":32492,"w":-23,"y":1409,"cat":"gosht","q":1.8705,"r":{"AND":32932,"BUX":30094,"FAR":33041,"JIZ":32293,"NAM":31076,"NAV":31298,"QAS":30870,"QQR":31811,"SAM":32103,"SIR":30650,"SUR":36353,"TOSS":36444,"TOS":33682,"XOR":30439},"rd":null},{"c":1250,"n":"Baliq","u":"kg","p":37404,"w":-89,"y":465,"cat":"gosht","q":0.8032,"r":{"AND":35828,"BUX":38659,"FAR":33572,"JIZ":39171,"NAM":35030,"NAV":38383,"QAS":34850,"QQR":35473,"SAM":37420,"SIR":35925,"SUR":40328,"TOSS":45256,"TOS":39707,"XOR":36808},"rd":null},{"c":127,"n":"Sut (yangi sogʻilgan)","u":"l","p":8024,"w":85,"y":385,"cat":"sut","q":3.9447,"r":{"AND":8032,"BUX":7120,"FAR":8624,"JIZ":8323,"NAM":7353,"NAV":8260,"QAS":6844,"QQR":7732,"SAM":8001,"SIR":7498,"SUR":7046,"TOSS":11467,"TOS":9138,"XOR":6949},"rd":null},{"c":135,"n":"Tuxum","u":"10 dona","p":12837,"w":145,"y":606,"cat":"sut","q":2.7,"r":{"AND":12574,"BUX":12545,"FAR":12183,"JIZ":12633,"NAM":12483,"NAV":13265,"QAS":12144,"QQR":12935,"SAM":12509,"SIR":11994,"SUR":14211,"TOSS":13841,"TOS":12997,"XOR":13498},"rd":null},{"c":1301,"n":"Paxta yogʻi","u":"l","p":20391,"w":36,"y":563,"cat":"yog","q":0.7745,"r":{"AND":20110,"BUX":19717,"FAR":20003,"JIZ":20318,"NAM":18578,"NAV":20610,"QAS":19515,"QQR":21785,"SAM":20091,"SIR":19583,"SUR":20534,"TOSS":22185,"TOS":20501,"XOR":21874},"rd":null},{"c":1302,"n":"Kungaboqar yogʻi","u":"l","p":21591,"w":60,"y":604,"cat":"yog","q":0.7745,"r":{"AND":21530,"BUX":21517,"FAR":21076,"JIZ":21073,"NAM":20898,"NAV":22532,"QAS":20836,"QQR":21749,"SAM":21345,"SIR":21057,"SUR":21635,"TOSS":24272,"TOS":21338,"XOR":22089},"rd":null},{"c":9001,"n":"Sariyogʻ","u":"kg","p":70193,"w":466,"y":302,"cat":"sut","q":0,"r":null,"rd":null},{"c":9002,"n":"Limon","u":"kg","p":32810,"w":-1340,"y":-2175,"cat":"meva","q":0,"r":null,"rd":null},{"c":141,"n":"Olma","u":"kg","p":11340,"w":112,"y":3,"cat":"meva","q":2.9193,"r":null,"rd":null},{"c":9003,"n":"Nok","u":"kg","p":18422,"w":279,"y":-2523,"cat":"meva","q":0,"r":null,"rd":null},{"c":9004,"n":"Uzum","u":"kg","p":13545,"w":1259,"y":-1111,"cat":"meva","q":0,"r":null,"rd":null},{"c":156,"n":"Karam","u":"kg","p":4366,"w":98,"y":-189,"cat":"sabz","q":1.4869,"r":{"AND":4599,"BUX":3742,"FAR":4347,"JIZ":4390,"NAM":4472,"NAV":4543,"QAS":3884,"QQR":4539,"SAM":3577,"SIR":3660,"SUR":4865,"TOSS":5467,"TOS":4696,"XOR":4153},"rd":null},{"c":158,"n":"Bodring","u":"kg","p":12725,"w":1915,"y":-6290,"cat":"sabz","q":0.8109,"r":{"AND":14342,"BUX":10434,"FAR":13706,"JIZ":13819,"NAM":13481,"NAV":9956,"QAS":10279,"QQR":13836,"SAM":10178,"SIR":12063,"SUR":12650,"TOSS":15241,"TOS":14877,"XOR":12230},"rd":null},{"c":159,"n":"Pomidor","u":"kg","p":12421,"w":2118,"y":-2042,"cat":"sabz","q":1.4598,"r":{"AND":12843,"BUX":9174,"FAR":11028,"JIZ":9707,"NAM":12007,"NAV":8587,"QAS":7380,"QQR":10921,"SAM":7927,"SIR":8655,"SUR":9419,"TOSS":13509,"TOS":11294,"XOR":10885},"rd":"2026-11-04"},{"c":160,"n":"Baqlajon","u":"kg","p":7255,"w":574,"y":1463,"cat":"sabz","q":0.4914,"r":{"AND":8484,"BUX":6804,"FAR":9122,"JIZ":6638,"NAM":7765,"NAV":6225,"QAS":6580,"QQR":6464,"SAM":6224,"SIR":5444,"SUR":6476,"TOSS":8958,"TOS":8060,"XOR":6217},"rd":null},{"c":9005,"n":"Bulgʻor qalampiri","u":"kg","p":11548,"w":1552,"y":-276,"cat":"sabz","q":0,"r":null,"rd":null},{"c":164,"n":"Sabzi","u":"kg","p":4582,"w":-193,"y":778,"cat":"sabz","q":1.264,"r":{"AND":4064,"BUX":4661,"FAR":4000,"JIZ":5018,"NAM":3879,"NAV":5628,"QAS":4298,"QQR":3707,"SAM":4390,"SIR":4573,"SUR":5209,"TOSS":7034,"TOS":5216,"XOR":3465},"rd":null},{"c":166,"n":"Sarimsoq","u":"kg","p":16507,"w":320,"y":-9425,"cat":"sabz","q":0,"r":{"AND":13550,"BUX":14031,"FAR":15076,"JIZ":16260,"NAM":14137,"NAV":19150,"QAS":13856,"QQR":18318,"SAM":15588,"SIR":15517,"SUR":16680,"TOSS":23514,"TOS":17767,"XOR":20227},"rd":null},{"c":167,"n":"Piyoz","u":"kg","p":3353,"w":333,"y":587,"cat":"sabz","q":1.0749,"r":{"AND":3234,"BUX":2931,"FAR":3343,"JIZ":3210,"NAM":3379,"NAV":3451,"QAS":3006,"QQR":3353,"SAM":2750,"SIR":2902,"SUR":3991,"TOSS":4517,"TOS":3385,"XOR":3574},"rd":null},{"c":170,"n":"Kartoshka","u":"kg","p":5105,"w":95,"y":-112,"cat":"sabz","q":4.0327,"r":{"AND":5004,"BUX":5002,"FAR":4811,"JIZ":4887,"NAM":4928,"NAV":5658,"QAS":4991,"QQR":5112,"SAM":4529,"SIR":4395,"SUR":5842,"TOSS":5992,"TOS":5151,"XOR":5183},"rd":null},{"c":9006,"n":"Loviya","u":"kg","p":19171,"w":176,"y":-1869,"cat":"don","q":0,"r":null,"rd":null},{"c":9007,"n":"Noʻxat","u":"kg","p":21258,"w":169,"y":-477,"cat":"don","q":0,"r":null,"rd":null},{"c":9008,"n":"Mosh","u":"kg","p":19108,"w":-22,"y":1184,"cat":"don","q":0,"r":null,"rd":null},{"c":174,"n":"Shakar","u":"kg","p":12327,"w":-5,"y":-856,"cat":"boshqa","q":0.589,"r":{"AND":12708,"BUX":12189,"FAR":12424,"JIZ":12091,"NAM":12736,"NAV":12944,"QAS":12175,"QQR":12306,"SAM":12391,"SIR":11785,"SUR":12403,"TOSS":12301,"TOS":11782,"XOR":12130},"rd":null}],"chains":["Baraka","Havas","Korzinka","Magnit","Makro","Olma"],"sm":{"4002":[10450,10500,7995,6490,9872,null],"4001":[13900,13250,13245,12990,13490,13990],"100":[18222,17900,17745,17490,18877,16995],"1180":[169900,null,175990,179990,163990,null],"120":[null,null,174990,178990,162990,null],"1220":[49900,48900,49990,null,38990,44990],"1302":[28900,29900,28390,27990,27490,28990],"1301":[null,23450,25544,null,25490,null],"170":[6900,6850,7990,8490,8490,8990],"164":[6900,8850,4890,5490,5490,7990],"167":[5400,6450,6990,7490,7490,5990],"159":[23900,26950,27990,25990,26990,21990],"158":[18900,19950,17990,19490,23990,13990],"174":[12111,13475,11995,12990,12155,11995]},"smNote":"narxtahlil.uz › Supermarketlar, 2026-yil 20-noyabrda olingan"};
+let REF = REF0, P = {};
+function indexRef() { P = Object.fromEntries(REF.products.map(p => [p.c, p])); }
+indexRef();
+
+const REGIONS = [
+  { c: "TOSS", n: "Toshkent shahri", s: "Toshkent sh.", la: 41.311, lo: 69.24 },
+  { c: "TOS", n: "Toshkent viloyati", s: "Toshkent vil.", la: 41.1, lo: 69.6 },
+  { c: "AND", n: "Andijon viloyati", s: "Andijon", la: 40.783, lo: 72.344 },
+  { c: "BUX", n: "Buxoro viloyati", s: "Buxoro", la: 39.767, lo: 64.423 },
+  { c: "FAR", n: "Fargʻona viloyati", s: "Fargʻona", la: 40.386, lo: 71.787 },
+  { c: "JIZ", n: "Jizzax viloyati", s: "Jizzax", la: 40.116, lo: 67.842 },
+  { c: "NAM", n: "Namangan viloyati", s: "Namangan", la: 40.998, lo: 71.671 },
+  { c: "NAV", n: "Navoiy viloyati", s: "Navoiy", la: 40.104, lo: 65.373 },
+  { c: "QAS", n: "Qashqadaryo viloyati", s: "Qashqadaryo", la: 38.86, lo: 65.789 },
+  { c: "QQR", n: "Qoraqalpogʻiston Respublikasi", s: "Qoraqalpogʻiston", la: 42.46, lo: 59.617 },
+  { c: "SAM", n: "Samarqand viloyati", s: "Samarqand", la: 39.654, lo: 66.96 },
+  { c: "SIR", n: "Sirdaryo viloyati", s: "Sirdaryo", la: 40.489, lo: 68.784 },
+  { c: "SUR", n: "Surxondaryo viloyati", s: "Surxondaryo", la: 37.224, lo: 67.278 },
+  { c: "XOR", n: "Xorazm viloyati", s: "Xorazm", la: 41.55, lo: 60.631 }
+];
+const RG = Object.fromEntries(REGIONS.map(r => [r.c, r]));
+/* Bozorlar: taxminiy koordinatalar (demo) */
+const PLACES = [
+  { n: "Chorsu bozori", r: "TOSS", la: 41.3266, lo: 69.2346, k: ["chorsu", "eski jova"] },
+  { n: "Oloy bozori", r: "TOSS", la: 41.3176, lo: 69.2803, k: ["oloy", "alay"] },
+  { n: "Farhod bozori", r: "TOSS", la: 41.2905, lo: 69.2167, k: ["farhod", "farxod"] },
+  { n: "Qoʻyliq bozori", r: "TOSS", la: 41.2410, lo: 69.3390, k: ["qoyliq", "kuyluk", "quyluq"] },
+  { n: "Yunusobod bozori", r: "TOSS", la: 41.3640, lo: 69.2870, k: ["yunusobod", "yunusabad"] },
+  { n: "Mirobod bozori", r: "TOSS", la: 41.2940, lo: 69.2785, k: ["mirobod", "mirabad"] },
+  { n: "Parkent bozori", r: "TOSS", la: 41.3200, lo: 69.3270, k: ["parkent"] },
+  { n: "Chirchiq bozori", r: "TOS", la: 41.4690, lo: 69.5820, k: ["chirchiq"] },
+  { n: "Siyob bozori", r: "SAM", la: 39.6610, lo: 66.9830, k: ["siyob", "siab"] },
+  { n: "Buxoro dehqon bozori", r: "BUX", la: 39.7745, lo: 64.4180, k: [] },
+  { n: "Andijon markaziy bozori", r: "AND", la: 40.7960, lo: 72.3540, k: [] },
+  { n: "Namangan Chorsu bozori", r: "NAM", la: 40.9990, lo: 71.6680, k: ["chorsu"] },
+  { n: "Fargʻona markaziy bozori", r: "FAR", la: 40.3830, lo: 71.7880, k: [] },
+  { n: "Qarshi markaziy bozori", r: "QAS", la: 38.8620, lo: 65.7950, k: [] },
+  { n: "Termiz dehqon bozori", r: "SUR", la: 37.2260, lo: 67.2780, k: [] },
+  { n: "Urganch dehqon bozori", r: "XOR", la: 41.5530, lo: 60.6250, k: [] },
+  { n: "Nukus markaziy bozori", r: "QQR", la: 42.4620, lo: 59.6100, k: [] },
+  { n: "Navoiy markaziy bozori", r: "NAV", la: 40.0990, lo: 65.3780, k: [] },
+  { n: "Jizzax markaziy bozori", r: "JIZ", la: 40.1170, lo: 67.8420, k: [] },
+  { n: "Guliston markaziy bozori", r: "SIR", la: 40.4890, lo: 68.7830, k: [] }
+];
+const CHAINS = [["korzinka", "Korzinka"], ["makro", "Makro"], ["havas", "Havas"], ["baraka", "Baraka"], ["magnit", "Magnit"]];
+const CATS = { gosht: "Goʻsht va baliq", don: "Non, un, don", sut: "Sut va tuxum", yog: "Yogʻ", sabz: "Sabzavotlar", meva: "Mevalar", boshqa: "Boshqa" };
+const SYN = {
+  100: ["guruch", "gurich", "devzira", "lazer guruch", "alanga", "рис", "гуруч"], 4001: ["oliy nav un", "oliy un", "un oliy nav", "мука высший сорт", "ун олий нав"],
+  4002: ["un", "bugdoy uni", "1 nav un", "birinchi nav un", "мука", "мука первый сорт", "ун"], 114: ["non", "buxanka", "нон", "хлеб"],
+  1180: ["mol goshti", "mol gosht", "gosht", "lahm", "sarpanja", "говядина", "мол гушти", "мясо"], 120: ["qoy goshti", "qoy gosht", "qoy", "баранина", "куй гушти"],
+  1220: ["tovuq goshti", "tovuq", "parranda goshti", "okorochka", "курица", "бройлер", "товук"], 1250: ["baliq", "karp", "sazan", "laqqa", "рыба", "балик"],
+  127: ["sut", "молоко", "сут"], 135: ["tuxum", "яйца", "яйцо", "тухум"], 1301: ["paxta yogi", "хлопковое масло", "пахта ёги"],
+  1302: ["kungaboqar yogi", "yog", "osimlik yogi", "подсолнечное масло", "растительное масло", "кунгабокар ёги"], 9001: ["sariyog", "сливочное масло", "сариёг"],
+  9002: ["limon", "лимон"], 141: ["olma", "яблоки", "яблоко", "олма"], 9003: ["nok", "груша", "нок"], 9004: ["uzum", "виноград", "узум"],
+  156: ["karam", "капуста", "карам"], 158: ["bodring", "огурцы", "огурец", "бодринг"], 159: ["pomidor", "pamidor", "помидор", "помидоры", "томат"],
+  160: ["baqlajon", "баклажан", "баклажон"], 9005: ["bulgor qalampiri", "qalampir", "болгарский перец", "сладкий перец"], 164: ["sabzi", "sariq sabzi", "морковь", "сабзи"],
+  166: ["sarimsoq", "чеснок", "саримсок"], 167: ["piyoz", "лук", "пиёз"], 170: ["kartoshka", "kartofel", "картошка", "картофель"],
+  9006: ["loviya", "фасоль", "ловия"], 9007: ["noxat", "нут", "нухат"], 9008: ["mosh", "маш"], 174: ["shakar", "qand", "сахар", "шакар"]
+};
+const SHORT = { 100: "Gu", 4001: "Un", 4002: "Un", 114: "No", 1180: "Mo", 120: "Qo", 1220: "To", 1250: "Ba", 127: "Su", 135: "Tu", 1301: "Pa", 1302: "Ku", 9001: "Sa", 9002: "Li", 141: "Ol", 9003: "No", 9004: "Uz", 156: "Ka", 158: "Bo", 159: "Po", 160: "Bq", 9005: "Qa", 164: "Sa", 166: "Sm", 167: "Pi", 170: "Ka", 9006: "Lo", 9007: "Nx", 9008: "Mo", 174: "Sh" };
+const POPULAR = [1180, 1220, 135, 1302, 174, 100, 170, 167, 159, 4002];
+
+/* ============ Yordamchilar ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = n => Math.round(n).toLocaleString("en-US").replace(/,/g, " ");
+const dec = (x, d = 1) => x.toFixed(d).replace(".", ",");
+const pct = (x, d = 1) => (x > 0 ? "+" : x < 0 ? "−" : "") + dec(Math.abs(x * 100), d) + "%";
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const median = a => { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const mad = a => { const m = median(a); return median(a.map(x => Math.abs(x - m))); };
+function wmedian(v, w) { const ix = v.map((x, i) => [x, w[i] || 1]).sort((a, b) => a[0] - b[0]); const tot = ix.reduce((s, x) => s + x[1], 0); let acc = 0; for (const [x, ww] of ix) { acc += ww; if (acc >= tot / 2) return x; } return ix.length ? ix[ix.length - 1][0] : NaN; }
+const MON = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+const dlabel = iso => { const d = new Date(iso + (iso.length === 10 ? "T00:00:00Z" : "")); return `${d.getUTCDate()}-${MON[d.getUTCMonth()]}`; };
+const dfull = iso => { const d = new Date(iso + "T00:00:00Z"); return `${d.getUTCFullYear()}-yil ${d.getUTCDate()}-${MON[d.getUTCMonth()]}`; };
+function ago(t) { const s = (Date.now() - Date.parse(t)) / 1000; if (s < 90) return "hozirgina"; if (s < 3600) return `${Math.round(s / 60)} daqiqa oldin`; if (s < 86400) return `${Math.round(s / 3600)} soat oldin`; return `${Math.round(s / 86400)} kun oldin`; }
+function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return `${t.getUTCFullYear()}-H${String(Math.ceil(((t - y0) / 864e5 + 1) / 7)).padStart(2, "0")}`; }
+function haversine(a, b, c, d) { const R = 6371, r = x => x * Math.PI / 180; const x = Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
+/* Telefon ilovasi (Capacitor) ichidami? Unda kamera, GPS, ulashish va eslatma telefonning oʻzi orqali ishlaydi. */
+const CAPN = window.Capacitor;
+const NATIVE = !!(CAPN && typeof CAPN.isNativePlatform === "function" && CAPN.isNativePlatform());
+const NP = name => (NATIVE && CAPN.Plugins && CAPN.Plugins[name]) || null;
+const uid8 = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const unitTxt = u => u === "l" ? "litr" : u;
+const perU = c => `soʻm/${P[c] ? (P[c].u === "l" ? "l" : P[c].u) : "kg"}`;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 3200); }
+
+const IC = {
+  ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 6v8M12 18h.01"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7 7 17"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.8"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  pct: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>'
+};
+const VL = { arzon: "Arzon narx", adolatli: "Adolatli narx", qimmat: "Qimmat", juda: "Juda qimmat", haqiqiy: "Haqiqiy chegirma", chalgituvchi: "Chalgʻituvchi", soxta: "Soxta chegirma" };
+const VI = { arzon: IC.down, adolatli: IC.ok, qimmat: IC.warn, juda: IC.x, haqiqiy: IC.ok, chalgituvchi: IC.warn, soxta: IC.x };
+const pill = (lab, cls = "") => `<span class="pill ${lab} ${cls}">${VI[lab] || ""}${VL[lab] || esc(lab)}</span>`;
+const chg = (x, d = 1) => `<span class="chg ${x > .0005 ? "up" : x < -.0005 ? "dn" : "eq"} num">${x > .0005 ? "▲" : x < -.0005 ? "▼" : ""} ${pct(x, d)}</span>`;
+
+/* ============ Mahsulot nomini aniqlash ============ */
+const CYR = { а: "a", б: "b", в: "v", г: "g", ғ: "g", д: "d", е: "e", ё: "yo", ж: "j", з: "z", и: "i", й: "y", к: "k", қ: "q", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ў: "o", ф: "f", х: "x", ҳ: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sh", ъ: "", ы: "i", ь: "", э: "e", ю: "yu", я: "ya" };
+function norm(s) { return String(s || "").toLowerCase().replace(/[ʻʼ'`’‘´]/g, "").split("").map(ch => CYR[ch] ?? ch).join("").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); }
+const tri = s => { const set = new Set(); for (const w of s.split(" ")) { const p = ` ${w} `; for (let k = 0; k < p.length - 2; k++) set.add(p.slice(k, k + 3)); } return set; };
+let SYN_N = null;
+function synIndex() { SYN_N = Object.entries(SYN).map(([c, a]) => [+c, a.map(x => { const n = norm(x); return { n, t: tri(n) }; })]); }
+function matchProduct(q) {
+  if (!SYN_N) synIndex();
+  const n = norm(q).replace(/\d+/g, " ").replace(/\b(som|sum|ming|kg|kilo|gr|gramm|litr|dona|ta|eski|yangi|narx|narxi|aksiya|chegirma|bozor|bozori|1)\b/g, " ").replace(/\s+/g, " ").trim();
+  if (!n) return { c: null, s: 0 };
+  const qt = tri(n), words = " " + n + " ";
+  let best = { c: null, s: 0 };
+  for (const [c, arr] of SYN_N) for (const x of arr) {
+    let s;
+    if (words.includes(" " + x.n + " ")) s = .9 + Math.min(.09, x.n.length / 200);
+    else { let i = 0; for (const g of qt) if (x.t.has(g)) i++; s = i / (qt.size + x.t.size - i); }
+    if (s > best.s) best = { c, s };
+  }
+  return best.s >= .34 ? best : { c: null, s: best.s };
+}
+
+/* ============ Matndan narxni ajratish ============ */
+const UNIT_RX = [
+  [/^(kg|кг|kilo|kilogramm?|кило)$/, "kg", 1], [/^(g|gr|гр|gramm?|грамм)$/, "kg", .001], [/^(l|litr|литр|л)$/, "l", 1], [/^(ml|мл)$/, "l", .001],
+  [/^(dona|ta|tasi|donasi|шт|штук|дона)$/, "dona", 1]
+];
+function parseText(raw) {
+  let s = String(raw || "").toLowerCase().replace(/[ʻʼ’‘`]/g, "'").replace(/(\d)[.,](\d{3})(?!\d)/g, "$1$2").replace(/(\d),(\d)/g, "$1.$2");
+  s = s.replace(/(\d)(kg|кг|g|gr|l|litr|ml|dona|ta|k|ming)\b/g, "$1 $2");
+  const tk = s.split(/\s+/).filter(Boolean);
+  const nums = [];
+  for (let i = 0; i < tk.length; i++) {
+    if (!/^\d+(\.\d+)?$/.test(tk[i])) continue;
+    let v = tk[i]; let j = i;
+    while (/^\d{1,3}$/.test(v) && tk[j + 1] && /^\d{3}$/.test(tk[j + 1])) { v += tk[j + 1]; j++; }
+    const nx = (tk[j + 1] || "").replace(/[^a-zа-яё']/g, "");
+    let num = parseFloat(v), kind = "n", unit = null, mult = 1;
+    if (/^(ming|минг|тыс|тысяч|k)$/.test(nx)) { num *= 1000; kind = "price"; j++; }
+    else if (/^(so'm|som|sum|сум|сўм|soum|uzs)$/.test(nx)) { kind = "price"; j++; }
+    else for (const [rx, u, m] of UNIT_RX) if (rx.test(nx)) { kind = "qty"; unit = u; mult = m; j++; break; }
+    nums.push({ num: num * mult, kind, unit });
+    i = j;
+  }
+  let prices = nums.filter(x => x.kind === "price");
+  if (!prices.length) prices = nums.filter(x => x.kind === "n" && x.num >= 300);
+  const qtyTok = nums.find(x => x.kind === "qty");
+  const m = matchProduct(raw);
+  const out = { c: m.c, score: m.s, price: null, old: null, qty: null, qunit: null };
+  if (prices.length >= 2 && /(eski|aksiya|chegirma|скидк|акци|dan|o'rniga|orniga|edi|было|->|→)/.test(s)) {
+    const vs = prices.map(x => x.num); out.old = Math.max(...vs); out.price = Math.min(...vs);
+  } else if (prices.length) out.price = Math.max(...prices.map(x => x.num));
+  if (qtyTok) { out.qty = qtyTok.num; out.qunit = qtyTok.unit; }
+  return out;
+}
+/* narxni asosiy birlikka (1 kg, 1 l, 10 dona) keltirish */
+function baseQty(c, qty, qunit, price) {
+  const p = P[c]; if (!p) return 1;
+  if (p.u === "10 dona") { if (qunit === "dona" && qty) return qty / 10; if (!qty && price && price < p.p * .3) return .1; return 1; }
+  if (qty && qty > 0 && (!qunit || qunit === "kg" || qunit === "l")) return qty;
+  return 1;
+}
+
+/* ============ Joylashuv ============ */
+let LOC = LS.get("nr-loc", null);
+let GEO = "sinalmagan";
+function regionAt(la, lo) { if (haversine(la, lo, 41.311, 69.24) < 14) return "TOSS"; let best = null, bd = 1e9; for (const r of REGIONS) { if (r.c === "TOSS") continue; const d = haversine(la, lo, r.la, r.lo); if (d < bd) { bd = d; best = r.c; } } return best; }
+function placeAt(la, lo) { let best = null, bd = 1e9; for (const p of PLACES) { const d = haversine(la, lo, p.la, p.lo); if (d < bd) { bd = d; best = p; } } const lim = best && best.r === "TOSS" ? 1.0 : 2.5; return best && bd <= lim ? { ...best, d: bd } : null; }
+function locFromCoords(la, lo, m, acc) { const pl = placeAt(la, lo); return { la: +la.toFixed(3), lo: +lo.toFixed(3), r: regionAt(la, lo), pl: pl ? pl.n : null, ty: pl ? "bozor" : null, m, acc: acc ? Math.round(acc) : null, ts: Date.now() }; }
+async function nativeGPS(G, timeout) {
+  try {
+    let perm = await G.checkPermissions();
+    if (perm.location !== "granted" && perm.coarseLocation !== "granted") perm = await G.requestPermissions({ permissions: ["location", "coarseLocation"] });
+    if (perm.location !== "granted" && perm.coarseLocation !== "granted") { GEO = "rad"; return null; }
+    const p = await G.getCurrentPosition({ enableHighAccuracy: true, timeout, maximumAge: 300000 });
+    GEO = "ruxsat"; return { la: p.coords.latitude, lo: p.coords.longitude, acc: p.coords.accuracy };
+  } catch (e) { GEO = /denied|permission|disabled/i.test(String(e && e.message)) ? "rad" : "xato"; return null; }
+}
+function getGPS(timeout = 7000) {
+  const G = NP("Geolocation"); if (G) return nativeGPS(G, timeout);
+  return new Promise(res => {
+    if (!("geolocation" in navigator)) { GEO = "yoq"; return res(null); }
+    let done = false;
+    const t = setTimeout(() => { if (!done) { done = true; GEO = "javobsiz"; res(null); } }, timeout);
+    try {
+      navigator.geolocation.getCurrentPosition(p => { if (done) return; done = true; clearTimeout(t); GEO = "ruxsat"; res({ la: p.coords.latitude, lo: p.coords.longitude, acc: p.coords.accuracy }); },
+        e => { if (done) return; done = true; clearTimeout(t); GEO = e && e.code === 1 ? "rad" : "xato"; res(null); },
+        { enableHighAccuracy: true, timeout, maximumAge: 300000 });
+    } catch (e) { done = true; clearTimeout(t); GEO = "bloklangan"; res(null); }
+  });
+}
+async function exifGPS(file) {
+  try {
+    const buf = await file.slice(0, 262144).arrayBuffer(); const v = new DataView(buf);
+    if (v.byteLength < 12 || v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o < v.byteLength - 10) {
+      const m = v.getUint16(o), len = v.getUint16(o + 2);
+      if (m === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) return tiffGPS(v, o + 10);
+      if ((m & 0xFF00) !== 0xFF00) break;
+      o += 2 + len;
+    }
+  } catch (e) { }
+  return null;
+}
+function tiffGPS(v, t) {
+  const le = v.getUint16(t) === 0x4949, u16 = p => v.getUint16(p, le), u32 = p => v.getUint32(p, le);
+  const ifd = t + u32(t + 4), n = u16(ifd); let g0 = null;
+  for (let i = 0; i < n; i++) { const e = ifd + 2 + i * 12; if (u16(e) === 0x8825) g0 = t + u32(e + 8); }
+  if (!g0) return null;
+  const gn = u16(g0), g = {};
+  for (let i = 0; i < gn; i++) {
+    const e = g0 + 2 + i * 12, tag = u16(e), type = u16(e + 2), cnt = u32(e + 4);
+    if (tag === 1 || tag === 3) g[tag] = String.fromCharCode(v.getUint8(e + 8));
+    if ((tag === 2 || tag === 4) && type === 5 && cnt === 3) { const p = t + u32(e + 8); const r = k => u32(p + k * 8) / (u32(p + k * 8 + 4) || 1); g[tag] = r(0) + r(1) / 60 + r(2) / 3600; }
+  }
+  if (g[2] == null || g[4] == null) return null;
+  let la = g[2], lo = g[4]; if (g[1] === "S") la = -la; if (g[3] === "W") lo = -lo;
+  if (!isFinite(la) || !isFinite(lo) || (la === 0 && lo === 0)) return null;
+  return { la, lo };
+}
+function placeFromText(s) {
+  const n = " " + norm(s) + " ";
+  for (const [k, name] of CHAINS) if (n.includes(k)) return { pl: name, ty: "supermarket", chain: name };
+  const cand = PLACES.filter(p => p.k.some(k => n.includes(" " + k)));
+  if (cand.length) { const p = cand.find(x => LOC && x.r === LOC.r) || cand[0]; return { pl: p.n, ty: "bozor", r: p.r }; }
+  if (/ (supermarket|supermarket|gipermarket|market) /.test(n)) return { ty: "supermarket" };
+  if (/ (dokon|magazin|magazin) /.test(n)) return { ty: "dokon" };
+  if (/ bozor/.test(n)) return { ty: "bozor" };
+  return null;
+}
+function saveLoc(l) { if (!l || !l.r) return; LOC = { ...l, ts: Date.now() }; LS.set("nr-loc", LOC); renderLocChip(); }
+const LOCM = { gps: "GPS", exif: "rasmdagi GPS", matn: "yozuvdan", tanlangan: "tanlangan", oxirgi: "oxirgi joylashuv", sinov: "sinov koordinatasi" };
+async function resolveLocation({ file, text, store, aiType } = {}) {
+  let loc = null;
+  if (!["rad", "bloklangan", "yoq", "javobsiz"].includes(GEO)) { const g = await getGPS(6000); if (g) loc = locFromCoords(g.la, g.lo, "gps", g.acc); }
+  if (!loc && file) { const e = await exifGPS(file); if (e) loc = locFromCoords(e.la, e.lo, "exif"); }
+  if (!loc && LOC) loc = { ...LOC, m: LOC.m === "tanlangan" ? "tanlangan" : "oxirgi" };
+  const tp = placeFromText([text, store].filter(Boolean).join(" "));
+  if (tp) {
+    loc = loc ? { ...loc } : { la: null, lo: null, r: null, m: "matn", ts: Date.now() };
+    if (tp.pl) loc.pl = tp.pl; if (tp.ty) loc.ty = tp.ty; if (tp.chain) loc.chain = tp.chain;
+    if (tp.r && (!loc.r || (loc.m !== "gps" && loc.m !== "exif"))) loc.r = tp.r;
+    loc.via = "matn";
+  }
+  if (loc && !loc.ty && aiType) loc.ty = aiType;
+  if (loc && (loc.m === "gps" || loc.m === "exif")) saveLoc(loc);
+  return loc && loc.r ? loc : null;
+}
+function locLine(l) { if (!l) return "Joylashuv aniqlanmadi"; return [l.pl, RG[l.r] ? RG[l.r].s : null].filter(Boolean).join(" · "); }
+function renderLocChip() {
+  const c = $("#locchip"); c.classList.remove("ok", "warn");
+  if (LOC && LOC.r) { c.classList.add(LOC.m === "gps" || LOC.m === "exif" ? "ok" : "warn"); $("#loctext").textContent = locLine(LOC); }
+  else { c.classList.add("warn"); $("#loctext").textContent = "Joylashuvni aniqlash"; }
+}
+
+/* ============ Server (ixtiyoriy): AI va umumiy baza ============ */
+/* Server manzili: Netlify'da avtomatik "/api". Boshqa joyda boʻlsa, index.html'dan oldin window.NARX_API = "https://.../api" deb yozing. */
+const API = String(window.NARX_API || "/api").replace(/\/$/, "");
+const CAP = { sample: null, img: false, db: null, canWrite: null, dl: null, dbReady: false, dbErr: null, refFromDb: false };
+let DBALL = [], LOCAL = LS.get("nr-local", []);
+function validRep(x) { return x && typeof x === "object" && P[x.c] && typeof x.up === "number" && isFinite(x.up) && x.up > 0 && typeof x.t === "string" && !isNaN(Date.parse(x.t)) && typeof x.id === "string"; }
+function ALL() { const m = new Map(); for (const x of DBALL) m.set(x.id, x); for (const x of LOCAL) if (!m.has(x.id)) m.set(x.id, { ...x, _local: true }); return [...m.values()].filter(validRep).sort((a, b) => Date.parse(b.t) - Date.parse(a.t)); }
+function OWN() { return LOCAL.filter(validRep); }
+const accepted = x => x.qa && x.qa.ok && x.src !== "namuna";
+async function api(path, body, timeout = 25000) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(API + path, body === undefined ? { signal: ctl.signal, cache: "no-store" } : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: ctl.signal });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j) throw Object.assign(new Error((j && j.error) || "HTTP " + r.status), { code: r.status === 429 ? "rate_limited" : (j && j.error) || "server" });
+    return j;
+  } finally { clearTimeout(t); }
+}
+CAP.dl = { save: async ({ filename, data }) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + data], { type: "text/csv;charset=utf-8" })); a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); } };
+async function pullReports() {
+  try { const j = await api("/reports"); if (j && Array.isArray(j.items)) { DBALL = j.items.filter(validRep); CAP.dbReady = true; CAP.dbErr = null; refresh(); } }
+  catch (e) { CAP.dbErr = navigator.onLine === false ? "oflayn" : "xato"; refresh(); }
+}
+let syncing = false;
+async function syncPending() {
+  if (!CAP.db || syncing) return; const pend = LOCAL.filter(x => x._pending); if (!pend.length) return;
+  syncing = true;
+  for (const x of pend) {
+    try { const { _pending, _local, ...item } = x; await api("/reports", { item }); x._pending = false; }
+    catch (e) { if (e.code === "invalid" || e.code === "rate_limited") x._pending = false; else break; }
+  }
+  syncing = false; LS.set("nr-local", LOCAL); pullReports();
+}
+async function initServer() {
+  if (location.protocol === "file:" || /SIZNING-SAYT/.test(API)) { renderAll(); return; }
+  try { const h = await api("/health", undefined, 8000); if (h && h.ok) { CAP.db = !!h.db; if (h.ai) { CAP.sample = true; CAP.img = true; } } }
+  catch (e) { CAP.db = null; }
+  if (CAP.db) { await pullReports(); syncPending(); setInterval(() => { if (document.visibilityState === "visible") { pullReports(); syncPending(); } }, 60000); }
+  renderAll();
+}
+window.addEventListener("online", () => syncPending());
+
+/* ============ Tahlil ============ */
+function smStats(c) { const a = REF.sm && REF.sm[c]; if (!a) return null; const v = a.filter(x => x); if (!v.length) return null; return { min: Math.min(...v), max: Math.max(...v), med: median(v), n: v.length, row: a }; }
+function crowd(c, r, days = 14, excl) {
+  const since = Date.now() - days * 864e5;
+  const xs = ALL().filter(x => x.c === c && accepted(x) && Date.parse(x.t) >= since && (!r || (x.loc && x.loc.r === r)) && x.id !== excl);
+  if (!xs.length) return { n: 0 };
+  const v = xs.map(x => x.up), w = xs.map(x => x.qa.w || 1);
+  return { n: xs.length, med: wmedian(v, w), mad: mad(v), min: Math.min(...v), max: Math.max(...v) };
+}
+function regPrice(c, r) { const p = P[c]; return p && p.r && r && p.r[r] ? p.r[r] : null; }
+function priceVerdict(c, up, r, ty) {
+  const p = P[c], reg = regPrice(c, r), sm = smStats(c);
+  const base = reg || p.p, baseLbl = reg ? `${RG[r].s} oʻrtachasi` : "respublika oʻrtachasi";
+  let lab, g, bench, benchLbl, tol = 0;
+  if (ty === "supermarket" && sm && sm.n >= 3) {
+    bench = sm.med; benchLbl = "supermarketlar medianasi"; g = up / bench - 1;
+    lab = up > sm.max * 1.15 ? "juda" : up > sm.max * 1.03 ? "qimmat" : up < sm.min * .97 ? "arzon" : "adolatli";
+  } else {
+    tol = ty === "supermarket" ? .15 : ty === "dokon" ? .08 : 0;
+    bench = base; benchLbl = baseLbl; g = up / bench - 1;
+    lab = g <= -.12 ? "arzon" : g <= .10 + tol ? "adolatli" : g <= .25 + tol ? "qimmat" : "juda";
+  }
+  return { lab, g, bench, benchLbl, reg, rep: p.p, sm, tol, cr: crowd(c, r, 14), crAll: crowd(c, null, 14) };
+}
+function quality(o) {
+  const why = []; let ok = true, w = o.src === "rasm" ? 1 : .6;
+  const p = P[o.c], ratio = o.up / p.p;
+  if (ratio < .35 || ratio > 3) { ok = false; why.push(`Narx rasmiy oʻrtachadan ${ratio < 1 ? dec(1 / ratio, 1) + " marta past" : dec(ratio, 1) + " marta yuqori"}: ehtimoliy xato, indeksga kirmaydi`); }
+  const cr = crowd(o.c, o.loc && o.loc.r, 30);
+  if (ok && cr.n >= 5 && cr.mad > 0) { const z = Math.abs(o.up - cr.med) / (1.4826 * cr.mad); if (z > 4) { ok = false; why.push(`Shu hududdagi ${cr.n} ta xabardan keskin farq qiladi (z = ${dec(z, 1)})`); } }
+  if (o.conf === "low") { w *= .4; why.push("AI yorliqni past ishonch bilan oʻqidi: ogʻirligi kamaytirildi"); }
+  if (o.issue) { w *= .3; why.push(`Rasmda muammo: ${({ screen: "ekrandan olingan surat", blurry: "xira", edited: "tahrirlangan boʻlishi mumkin", not_a_tag: "narx yorligʻi emas" })[o.issue] || o.issue}`); if (o.issue === "edited" || o.issue === "not_a_tag") ok = false; }
+  if (!o.loc || !o.loc.r) { w *= .6; why.push("Joylashuv aniqlanmadi"); } else if (o.loc.m === "oxirgi") w *= .85;
+  const now = Date.now(), mine = OWN();
+  if (mine.some(x => now - Date.parse(x.t) < 600e3 && x.c === o.c && Math.abs(x.up - o.up) < 1)) { ok = false; why.push("Takroriy xabar: 10 daqiqa ichida xuddi shu narx yuborilgan"); }
+  if (mine.filter(x => now - Date.parse(x.t) < 864e5).length >= 40) { ok = false; why.push("Kunlik limit (40 ta xabar) tugadi"); }
+  return { ok, w: +w.toFixed(2), why };
+}
+function discountVerdict({ c, was, now, r, ty, pl, chain, excl }) {
+  const claim = 1 - now / was, p = P[c], sm = smStats(c), reg = regPrice(c, r) || p.p;
+  const useSm = (ty === "supermarket" || chain) && sm && sm.n >= 3;
+  const typ = useSm ? sm.med : reg, hi = useSm ? sm.max : reg * 1.2;
+  const typLbl = useSm ? "supermarketlar medianasi" : (regPrice(c, r) ? `${RG[r].s} bozor oʻrtachasi` : "respublika oʻrtachasi");
+  const since = Date.now() - 30 * 864e5, place = chain || pl;
+  const hist = place ? ALL().filter(x => x.c === c && x.id !== excl && accepted(x) && Date.parse(x.t) >= since && ((x.loc && (x.loc.chain || x.loc.pl)) === place)) : [];
+  const low30 = hist.length ? Math.min(...hist.map(x => x.up)) : null;
+  const parts = [];
+  let real;
+  if (low30) {
+    real = 1 - now / low30; const gap = claim - real;
+    parts.push({ l: "30 kunlik eng past narxga nisbatan", pts: 50 * clamp01((gap - .02) / .15), max: 50, tx: `Eʼlon: −${Math.round(claim * 100)}%. Shu joyda 30 kun ichidagi eng past narx ${fmt(low30)} soʻm, unga nisbatan ${real >= 0 ? "haqiqatda −" + dec(real * 100, 1) + "%" : "aksincha " + dec(-real * 100, 1) + "% qimmat"}.` });
+  } else {
+    real = 1 - now / typ; const gap = claim - Math.max(real, 0);
+    parts.push({ l: "Eʼlon qilingan chegirma bozor bilan solishtirildi", pts: 50 * clamp01((gap - .05) / .2), max: 50, tx: `Eʼlon: −${Math.round(claim * 100)}%. Bu joyning 30 kunlik tarixi hali yoʻq, shuning uchun ${typLbl} (${fmt(typ)} soʻm) bilan solishtirildi: haqiqiy foyda ${real >= 0 ? dec(real * 100, 1) + "%" : "yoʻq"}.` });
+  }
+  const infl = was / hi - 1;
+  parts.push({ l: "“Eski narx” real edimi?", pts: 25 * clamp01(infl / .2), max: 25, tx: infl > 0 ? `Eski narx ${fmt(was)} soʻm odatdagi eng yuqori narxdan (${fmt(hi)} soʻm) ${pct(infl, 0)} baland: sunʼiy oshirilgan boʻlishi mumkin.` : `Eski narx odatdagi oraliqda (eng yuqori ${fmt(hi)} soʻm).` });
+  const above = now / typ - 1;
+  parts.push({ l: "Aksiya narxi odatdagidan arzonmi?", pts: 15 * clamp01((above + .03) / .08), max: 15, tx: above >= -.03 ? `Aksiya narxi ${fmt(now)} soʻm ${typLbl}dan (${fmt(typ)} soʻm) arzon emas.` : `Aksiya narxi ${typLbl}dan ${pct(-above, 0)} arzon.` });
+  const since60 = Date.now() - 60 * 864e5;
+  const weeks = new Set(place ? ALL().filter(x => x.c === c && x.old && Date.parse(x.t) >= since60 && ((x.loc && (x.loc.chain || x.loc.pl)) === place)).map(x => x.wk) : []);
+  parts.push({ l: "Tugamaydigan aksiya", pts: weeks.size >= 4 ? 10 : 0, max: 10, tx: place ? `Soʻnggi 60 kunda shu joyda ${weeks.size} xil haftada aksiya qayd etilgan.` : "Joy nomi nomaʼlum, tekshirib boʻlmadi." });
+  const score = Math.round(parts.reduce((s, x) => s + x.pts, 0));
+  return { lab: score >= 55 ? "soxta" : score >= 25 ? "chalgituvchi" : "haqiqiy", score, claim, real, parts, typ, hi, low30 };
+}
+/* Savat indeksi (narx.stat.uz namunaviy savati) */
+const BASKET = () => REF.products.filter(p => p.q > 0);
+function basketCost(r, mode = "now") { let s = 0; for (const p of BASKET()) { const v = mode === "now" ? (r ? (regPrice(p.c, r) || p.p) : p.p) : mode === "prev" ? p.p - p.w : p.p - p.y; s += v * p.q; } return s; }
+function crowdBasket(r) {
+  let s = 0, cov = 0, tot = 0;
+  for (const p of BASKET()) { const off = r ? (regPrice(p.c, r) || p.p) : p.p; const cr = crowd(p.c, r, 14); const v = cr.n >= 3 ? cr.med : off; s += v * p.q; tot += off * p.q; if (cr.n >= 3) cov += off * p.q; }
+  return { s, cov: tot ? cov / tot : 0, off: tot };
+}
+function weeklyRatio() {
+  const by = {};
+  for (const x of ALL()) { if (!accepted(x) || !P[x.c]) continue; (by[x.wk] ||= {})[x.c] ||= []; by[x.wk][x.c].push(x.up / P[x.c].p); }
+  return Object.keys(by).sort().map(wk => { let s = 0, q = 0, n = 0; for (const [c, a] of Object.entries(by[wk])) { const w = (P[c].q || .3) * P[c].p; s += median(a) * w; q += w; n += a.length; } return { wk, ratio: s / q, n }; });
+}
+
+/* ============ Namunaviy yorliqlar (sinov uchun) ============ */
+function drawTag(kind) {
+  const c = document.createElement("canvas"); c.width = 720; c.height = 480; const x = c.getContext("2d");
+  if (kind === "chegirma") {
+    x.fillStyle = "#d7dde0"; x.fillRect(0, 0, 720, 480);
+    x.save(); x.translate(360, 240); x.rotate(.03);
+    x.fillStyle = "#ffd400"; x.fillRect(-300, -170, 600, 340); x.fillStyle = "#e30613"; x.fillRect(-300, -170, 600, 70);
+    x.fillStyle = "#fff"; x.font = "800 44px Arial"; x.textAlign = "center"; x.fillText("AKSIYA  −20%", 0, -120);
+    x.fillStyle = "#111"; x.font = "700 36px Arial"; x.fillText("KUNGABOQAR YOGʻI 1 L", 0, -50);
+    x.font = "600 40px Arial"; x.fillStyle = "#555"; x.fillText("34 900", -150, 30); x.strokeStyle = "#e30613"; x.lineWidth = 6; x.beginPath(); x.moveTo(-235, 20); x.lineTo(-65, 0); x.stroke();
+    x.fillStyle = "#111"; x.font = "900 96px Arial"; x.fillText("27 900", 110, 60); x.font = "600 28px Arial"; x.fillText("soʻm", 110, 100);
+    x.font = "600 24px Arial"; x.fillStyle = "#333"; x.fillText("Supermarket · 01.11–30.11", 0, 150);
+    x.restore();
+    return { canvas: c, demo: { is_price_tag: true, items: [{ product_text: "Kungaboqar yogʻi 1 L", product_code: 1302, price_uzs: 27900, pack_qty: 1, pack_unit: "l", old_price_uzs: 34900 }], store_name: null, place_type: "supermarket", confidence: "high" } };
+  }
+  x.fillStyle = "#6b5640"; x.fillRect(0, 0, 720, 480);
+  x.save(); x.translate(360, 240); x.rotate(-.045);
+  x.fillStyle = "#e9d6ae"; x.fillRect(-280, -170, 560, 340); x.strokeStyle = "#c9b48a"; x.lineWidth = 3; x.strokeRect(-264, -154, 528, 308);
+  x.fillStyle = "#1d2a7a"; x.textAlign = "center"; x.font = "700 58px 'Comic Sans MS', Arial"; x.fillText("MOL GOʻSHTI", 0, -70);
+  x.fillStyle = "#b3261e"; x.font = "800 104px 'Comic Sans MS', Arial"; x.fillText("158 000", 0, 50);
+  x.fillStyle = "#1d2a7a"; x.font = "600 42px 'Comic Sans MS', Arial"; x.fillText("soʻm / 1 kg", 0, 115);
+  x.restore();
+  return { canvas: c, demo: { is_price_tag: true, items: [{ product_text: "MOL GOʻSHTI", product_code: 1180, price_uzs: 158000, pack_qty: null, pack_unit: null, old_price_uzs: null }], store_name: null, place_type: "bozor", confidence: "high" } };
+}
+const canvasBlob = c => new Promise(r => c.toBlob(r, "image/jpeg", .9));
+async function shrink(file, max = 1400) {
+  try {
+    const url = URL.createObjectURL(file); const img = new Image();
+    await new Promise((ok, no) => { img.onload = ok; img.onerror = no; img.src = url; });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight)); const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url); return await canvasBlob(c);
+  } catch (e) { return file; }
+}
+
+/* ============ AI (server orqali; API kalit faqat serverda) ============ */
+const toB64 = blob => new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.onerror = no; fr.readAsDataURL(blob); });
+async function aiReadPhoto(blob) { return await api("/read", { image: await toB64(blob), mime: blob.type || "image/jpeg" }, 50000); }
+async function aiParseText(text) { return await api("/parse", { text: String(text).slice(0, 300) }, 25000); }
+async function aiExplain(kind, ctx) { const j = await api("/explain", { kind, ctx }, 30000); return String(j && j.text || "").trim(); }
+function aiErr(e) { return e && e.code === "rate_limited" ? "Bugungi AI limiti tugadi yoki soʻrovlar koʻp. Keyinroq urinib koʻring." : e && e.code === "no_ai" ? "Serverda AI kaliti sozlanmagan." : "AI javob bermadi. Yuqoridagi tahlil avtomatik hisoblangan."; }
+
+/* ============ Saqlash (avval telefonga, keyin serverga) ============ */
+async function saveRep(rep) {
+  const mine = { ...rep, _pending: !!CAP.db };
+  LOCAL = [mine, ...LOCAL.filter(x => x.id !== rep.id)].slice(0, 500); LS.set("nr-local", LOCAL);
+  if (!CAP.db) return "qurilma";
+  try { await api("/reports", { item: rep }); mine._pending = false; LS.set("nr-local", LOCAL); DBALL = [rep, ...DBALL.filter(x => x.id !== rep.id)]; return "baza"; }
+  catch (e) { if (e.code === "invalid" || e.code === "rate_limited") { mine._pending = false; LS.set("nr-local", LOCAL); if (e.code === "rate_limited") toast("Kunlik limit: xabar faqat shu telefonda saqlandi."); } return "qurilma"; }
+}
+
+/* ============ Oʻrnatish (PWA) ============ */
+let INSTALL_EVT = null;
+const STANDALONE = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); INSTALL_EVT = e; if (TAB === "asosiy") renderHome(); });
+window.addEventListener("appinstalled", () => { INSTALL_EVT = null; toast("Ilova oʻrnatildi"); if (TAB === "asosiy") renderHome(); });
+function installCard() {
+  if (NATIVE || STANDALONE()) return "";
+  if (INSTALL_EVT) return `<button class="btn" id="h-install"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg> Ilovani telefonga oʻrnatish</button>`;
+  if (IOS) return `<p class="note">Ilovani oʻrnatish: Safari’da pastdagi <b>Ulashish</b> tugmasini bosing va <b>Add to Home Screen</b> (На экран «Домой») ni tanlang.</p>`;
+  return "";
+}
+
+/* ============ Ekranlar ============ */
+let TAB = "asosiy";
+const TABS = ["asosiy", "narxlar", "indeks", "chegirma", "malumot"];
+let VIEW_REGION = null, PRICE_Q = "";
+function setTab(t, push = true) {
+  if (!TABS.includes(t)) t = "asosiy"; TAB = t;
+  for (const x of TABS) $("#v-" + x).hidden = x !== t;
+  document.querySelectorAll(".tabbar button").forEach(b => { if (b.dataset.tab === t) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  if (push && location.hash !== "#" + t) { try { history.replaceState(null, "", "#" + t); } catch (e) { location.hash = t; } }
+  render(t); $("#v-" + t).scrollTop = 0;
+}
+function render(t) { ({ asosiy: renderHome, narxlar: renderPrices, indeks: renderIndex, chegirma: renderDisc, malumot: renderData })[t](); }
+function renderAll() { renderLocChip(); render(TAB); }
+let refreshT = null;
+function refresh() { clearTimeout(refreshT); refreshT = setTimeout(() => { if (!$("#sheet").classList.contains("open") || !SHEET_LOCK) render(TAB); }, 120); }
+
+function repRow(x) {
+  const p = P[x.c];
+  return `<div class="li stripe ${x.v ? x.v.lab : ""}" style="padding-left:10px"><div class="grow"><div class="t">${esc(p.n)} <span class="num">${fmt(x.up)}</span> <span class="muted small">${perU(x.c)}</span></div><div class="s">${esc(locLine(x.loc))} · ${ago(x.t)}${x.src === "rasm" ? " · rasm" : " · yozma"}${x._pending ? " · hali yuborilmagan" : ""}</div></div><div class="r">${x.v ? pill(x.v.lab, "sm") : ""}${x.old ? `<span class="muted small">chegirma: ${x.d ? VL[x.d] : "—"}</span>` : ""}</div></div>`;
+}
+
+function renderHome() {
+  const b = basketCost(null), bp = basketCost(null, "prev"), by = basketCost(null, "year");
+  const movers = [...REF.products].map(p => ({ p, w: p.w / (p.p - p.w) })).sort((a, c) => c.w - a.w);
+  const up = movers.slice(0, 3), dn = movers.slice(-2).reverse();
+  const r = LOC && LOC.r;
+  let reps = ALL().filter(x => !r || (x.loc && x.loc.r === r)).slice(0, 6), local = !!r;
+  if (!reps.length) { reps = ALL().slice(0, 6); local = false; }
+  const daysNY = Math.ceil((Date.UTC(new Date().getFullYear(), 11, 31) - Date.now()) / 864e5);
+  $("#v-asosiy").innerHTML = `
+  <div class="hello"><h1>Narx adolatlimi?</h1><p>Narx yorligʻini suratga oling yoki yozib yuboring. AI oʻqiydi va rasmiy narx bilan solishtiradi.</p></div>
+  ${installCard()}
+  <div class="cta">
+    <button class="cam" id="h-cam">${IC.cam}<span>Rasmga olish<br><small>narx yorligʻi</small></span></button>
+    <button class="write" id="h-write">${IC.pen}<span>Yozib yuborish<br><small>mahsulot va narx</small></span></button>
+  </div>
+  <div class="row2"><button class="btn2" id="h-gal">Galereyadan tanlash</button><button class="btn2" id="h-demo">Namuna bilan sinash</button></div>
+  <section class="card">
+    <h2>Bu hafta bozorlarda</h2>
+    <p class="sub">narx.stat.uz, ${dfull(REF.week)} kuzatuvi, dehqon bozorlari oʻrtachasi</p>
+    <div class="tiles">
+      <div class="tile"><b class="num">${fmt(b)}</b><span>Oylik savat, soʻm (21 mahsulot)</span></div>
+      <div class="tile"><b class="num">${pct(b / by - 1)}</b><span>Bir yilda · haftada ${pct(b / bp - 1)}</span></div>
+    </div>
+    <div class="list">${up.map(({ p, w }) => `<div class="li"><div class="ico">${SHORT[p.c] || ""}</div><div class="grow"><div class="t">${esc(p.n)}</div><div class="s num">${fmt(p.p)} ${perU(p.c)}</div></div>${chg(w)}</div>`).join("")}
+    ${dn.map(({ p, w }) => `<div class="li"><div class="ico">${SHORT[p.c] || ""}</div><div class="grow"><div class="t">${esc(p.n)}</div><div class="s num">${fmt(p.p)} ${perU(p.c)}</div></div>${chg(w)}</div>`).join("")}</div>
+    <button class="linkbtn" data-go="narxlar">Barcha narxlar →</button>
+  </section>
+  <section class="card">
+    <h2>${local ? esc(RG[r].s) + ": soʻnggi xabarlar" : "Soʻnggi xabarlar"}</h2>
+    <p class="sub">Xaridorlar yuborgan narxlar. Har biri avtomatik tekshiriladi.</p>
+    ${reps.length ? `<div class="list">${reps.map(repRow).join("")}</div>` : `<div class="empty">Hali xabar yoʻq. Birinchi boʻlib narx yuboring.</div>`}
+  </section>
+  <p class="note">Yangi yilgacha ${daysNY} kun. Bayram oldidan narx sakrashlari <b>Indeks</b> boʻlimida avtomatik kuzatiladi. Barcha tahlilni AI va algoritmlar bajaradi, inson aralashmaydi.</p>`;
+  const ib = $("#h-install"); if (ib) ib.onclick = async () => { const ev = INSTALL_EVT; if (!ev) return; ev.prompt(); try { await ev.userChoice; } catch (e) { } INSTALL_EVT = null; renderHome(); };
+  $("#h-cam").onclick = () => pickPhoto("narx", true);
+  $("#h-gal").onclick = () => pickPhoto("narx", false);
+  $("#h-write").onclick = () => openWrite();
+  $("#h-demo").onclick = () => runDemo("narx");
+  document.querySelectorAll("#v-asosiy [data-go]").forEach(b => b.onclick = () => setTab(b.dataset.go));
+}
+
+function renderPrices() {
+  const r = VIEW_REGION ?? (LOC && LOC.r) ?? "";
+  const q = norm(PRICE_Q);
+  const prods = REF.products.filter(p => !q || norm(p.n).includes(q) || (SYN[p.c] || []).some(s => norm(s).includes(q)));
+  const groups = {}; for (const p of prods) (groups[p.cat] ||= []).push(p);
+  $("#v-narxlar").innerHTML = `
+  <div class="hello"><h1>Narxlar</h1><p>Rasmiy oʻrtacha narx (narx.stat.uz, ${dlabel(REF.week)}) va xaridorlar yuborgan narxlar.</p></div>
+  <label class="f" for="pr-reg">Hudud<select class="in" id="pr-reg"><option value="">Respublika boʻyicha</option>${REGIONS.map(x => `<option value="${x.c}" ${x.c === r ? "selected" : ""}>${esc(x.n)}</option>`).join("")}</select></label>
+  <div class="search">${IC.search}<input class="in" id="pr-q" type="search" placeholder="Mahsulotni qidiring" value="${esc(PRICE_Q)}" aria-label="Mahsulotni qidiring"></div>
+  ${Object.keys(CATS).filter(k => groups[k]).map(k => `<p class="cathead">${CATS[k]}</p><section class="card" style="padding:4px 14px"><div class="list">${groups[k].map(p => {
+    const v = r ? regPrice(p.c, r) : null, price = v || p.p, cr = crowd(p.c, r || null, 14);
+    return `<button class="li" data-p="${p.c}"><div class="ico">${SHORT[p.c] || ""}</div><div class="grow"><div class="t">${esc(p.n)}</div><div class="s">${cr.n ? `Xaridorlar: ${fmt(cr.med)} (${cr.n} ta)` : (r && !v ? "Hudud narxi yoʻq: respublika" : unitTxt(p.u) + " uchun")}</div></div><div class="r"><span class="p num">${fmt(price)}</span>${chg(p.w / (p.p - p.w))}</div></button>`;
+  }).join("")}</div></section>`).join("") || `<div class="empty">Topilmadi</div>`}
+  <p class="note">Haftalik oʻzgarish respublika boʻyicha (${dlabel(REF.prev)} → ${dlabel(REF.week)}).</p>`;
+  $("#pr-reg").onchange = e => { VIEW_REGION = e.target.value; renderPrices(); };
+  const qi = $("#pr-q"); qi.oninput = e => { PRICE_Q = e.target.value; clearTimeout(qi.t); qi.t = setTimeout(() => { renderPrices(); const n = $("#pr-q"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
+  document.querySelectorAll("#v-narxlar [data-p]").forEach(b => b.onclick = () => openProduct(+b.dataset.p, r));
+}
+function openProduct(c, r) {
+  const p = P[c]; const regs = p.r ? REGIONS.map(x => ({ x, v: p.r[x.c] })).filter(o => o.v).sort((a, b) => b.v - a.v) : [];
+  const mx = regs.length ? regs[0].v : 1, sm = smStats(c), crs = ALL().filter(x => x.c === c).slice(0, 8);
+  openSheet(p.n, `
+  <section class="card"><div class="big num">${fmt(r && regPrice(c, r) || p.p)} <span class="unit">${perU(c)}</span></div>
+  <p class="sub">${r && regPrice(c, r) ? esc(RG[r].n) + " oʻrtachasi" : "Respublika oʻrtachasi"} · narx.stat.uz, ${dfull(p.rd || REF.week)}</p>
+  <div class="tiles"><div class="tile"><b class="num">${pct(p.w / (p.p - p.w))}</b><span>Bir haftada (respublika)</span></div><div class="tile"><b class="num">${pct(p.y / (p.p - p.y))}</b><span>Bir yilda (${dlabel(REF.yearAgo)} dan)</span></div></div></section>
+  ${regs.length ? `<section class="card"><h3>Viloyatlar boʻyicha</h3><div class="bars">${regs.map(o => `<div class="bar ${o.x.c === r ? "me" : ""}"><span>${esc(o.x.s)}</span><div class="track"><div class="fill" style="width:${(o.v / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(o.v)}</span></div>`).join("")}</div></section>` : `<p class="note">Bu mahsulot uchun viloyat narxlari ilovaga hali yuklanmagan: respublika oʻrtachasi ishlatiladi.</p>`}
+  ${sm ? `<section class="card"><h3>Supermarketlarda (Toshkent)</h3><div class="list">${REF.chains.map((ch, i) => sm.row[i] ? `<div class="li"><div class="grow"><div class="t">${esc(ch)}</div></div><span class="p num">${fmt(sm.row[i])}</span></div>` : "").join("")}</div><p class="sub">${esc(REF.smNote)}</p></section>` : ""}
+  <section class="card"><h3>Xaridorlar xabarlari</h3>${crs.length ? `<div class="list">${crs.map(repRow).join("")}</div>` : `<div class="empty">Hali xabar yoʻq</div>`}</section>`);
+}
+
+function renderIndex() {
+  const b = basketCost(null), bp = basketCost(null, "prev"), by = basketCost(null, "year");
+  const regs = REGIONS.map(x => ({ x, v: basketCost(x.c) })).sort((a, c) => c.v - a.v), mx = regs[0].v;
+  const r = LOC && LOC.r, cb = crowdBasket(null), wr = weeklyRatio();
+  const daysNY = Math.ceil((Date.UTC(new Date().getFullYear(), 11, 31) - Date.now()) / 864e5);
+  const jumps = REF.products.map(p => ({ p, w: p.w / (p.p - p.w) })).filter(o => o.w > .05).sort((a, c) => c.w - a.w);
+  const crowdJ = REF.products.map(p => { const a = crowd(p.c, null, 7), bb = (() => { const since = Date.now() - 14 * 864e5, till = Date.now() - 7 * 864e5; const xs = ALL().filter(x => x.c === p.c && accepted(x) && Date.parse(x.t) >= since && Date.parse(x.t) < till); return xs.length >= 3 ? median(xs.map(x => x.up)) : null; })(); return a.n >= 3 && bb ? { p, w: a.med / bb - 1 } : null; }).filter(o => o && o.w > .08);
+  $("#v-indeks").innerHTML = `
+  <div class="hello"><h1>NarxRadar indeksi</h1><p>Oilaning oylik oziq-ovqat savati qancha turadi va qanday oʻzgaryapti.</p></div>
+  <section class="card">
+    <h2>Savat narxi, respublika</h2>
+    <div class="big num">${fmt(b)} <span class="unit">soʻm/oy</span></div>
+    <p class="sub">narx.stat.uz namunaviy savatidan 21 mahsulot, ${dfull(REF.week)}</p>
+    <div class="tiles"><div class="tile"><b class="num">${dec(b / by * 100, 1)}</b><span>Indeks (${dlabel(REF.yearAgo)} 2025 = 100)</span></div><div class="tile"><b class="num">${pct(b / bp - 1)}</b><span>Oxirgi haftada</span></div></div>
+    <div class="cmp">
+      <div class="bar"><span>${dlabel(REF.yearAgo)} 2025</span><div class="track"><div class="fill" style="width:${(by / b * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(by)}</span></div>
+      <div class="bar"><span>${dlabel(REF.prev)}</span><div class="track"><div class="fill" style="width:${(bp / b * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(bp)}</span></div>
+      <div class="bar me"><span>${dlabel(REF.week)}</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="v num">${fmt(b)}</span></div>
+    </div>
+  </section>
+  <section class="card">
+    <h2>Xalq indeksi</h2>
+    <p class="sub">Xuddi shu savat, lekin xaridorlar yuborgan haqiqiy narxlar bilan (soʻnggi 14 kun, kamida 3 ta xabar boʻlgan mahsulotlar).</p>
+    <div class="tiles"><div class="tile"><b class="num">${fmt(cb.s)}</b><span>Savat, soʻm/oy</span></div><div class="tile"><b class="num">${cb.cov ? pct(cb.s / cb.off - 1) : "—"}</b><span>Rasmiydan farq · qamrov ${Math.round(cb.cov * 100)}%</span></div></div>
+    ${wr.length >= 2 ? sparkline(wr) : `<p class="note">Haftalik grafik kamida 2 haftalik xabarlar yigʻilganda paydo boʻladi. Hozir: ${ALL().filter(accepted).length} ta qabul qilingan xabar.</p>`}
+  </section>
+  <section class="card">
+    <h2>Yangi yil oldidan nazorat</h2>
+    <p class="sub">${daysNY} kun qoldi. Bir haftada 5% dan koʻp qimmatlagan mahsulotlar avtomatik belgilanadi.</p>
+    <div class="list">${jumps.map(({ p, w }) => `<div class="li"><div class="ico">${SHORT[p.c] || ""}</div><div class="grow"><div class="t">${esc(p.n)}</div><div class="s num">${fmt(p.p - p.w)} → ${fmt(p.p)} ${perU(p.c)} · rasmiy</div></div>${chg(w)}</div>`).join("")}
+    ${crowdJ.map(({ p, w }) => `<div class="li"><div class="ico">${SHORT[p.c] || ""}</div><div class="grow"><div class="t">${esc(p.n)}</div><div class="s">xaridorlar xabarlari boʻyicha</div></div>${chg(w)}</div>`).join("")}</div>
+  </section>
+  <section class="card">
+    <h2>Viloyatlarda savat narxi</h2>
+    <p class="sub">Eng qimmat va eng arzon hudud farqi: ${pct(regs[0].v / regs[regs.length - 1].v - 1, 0)}.</p>
+    <div class="bars">${regs.map(o => `<div class="bar ${o.x.c === r ? "me" : ""}"><span>${esc(o.x.s)}</span><div class="track"><div class="fill" style="width:${(o.v / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(o.v)}</span></div>`).join("")}</div>
+    <p class="sub">Olma uchun viloyat narxi yoʻq, respublika narxi olingan. Pomidor va oliy nav un viloyat narxlari ${dlabel(REF.prev)} holatiga.</p>
+  </section>
+  ${CAP.sample ? `<section class="card"><h2>AI haftalik sharhi</h2><div id="ix-ai"><button class="btn2" id="ix-ai-btn">AI sharh yozsin</button></div></section>` : ""}`;
+  const ab = $("#ix-ai-btn"); if (ab) ab.onclick = async () => {
+    const box = $("#ix-ai"); box.innerHTML = `<p class="sub">AI yozmoqda…</p>`;
+    const ctx = { savat: Math.round(b), haftalik: pct(b / bp - 1), yillik: pct(b / by - 1), eng_qimmatlagan: jumps.slice(0, 5).map(o => `${o.p.n} ${pct(o.w)}`), eng_qimmat_viloyat: regs[0].x.n, eng_arzon_viloyat: regs[regs.length - 1].x.n, xalq_qamrovi: Math.round(cb.cov * 100) + "%", yangi_yilgacha_kun: daysNY };
+    try { const tx = await aiExplain("index", ctx); box.innerHTML = `<div class="ai"><b>AI sharhi</b>${esc(tx)}</div>`; }
+    catch (e) { box.innerHTML = `<p class="note">${aiErr(e)}</p>`; }
+  };
+}
+function sparkline(wr) {
+  const W = 360, H = 90, pad = 8, ys = wr.map(x => x.ratio), lo = Math.min(.9, ...ys), hi = Math.max(1.1, ...ys);
+  const X = i => pad + i * (W - 2 * pad) / (wr.length - 1), Y = v => H - pad - (v - lo) / (hi - lo) * (H - 2 * pad);
+  const d = wr.map((x, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(x.ratio).toFixed(1)}`).join("");
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Xalq narxi rasmiy narxga nisbatan, haftalar boʻyicha"><line x1="${pad}" x2="${W - pad}" y1="${Y(1)}" y2="${Y(1)}" stroke="var(--line)" stroke-dasharray="4 4"/><path d="${d}L${X(wr.length - 1)},${H - pad}L${X(0)},${H - pad}Z" fill="var(--accent)" opacity=".12"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.5"/><circle cx="${X(wr.length - 1)}" cy="${Y(ys[ys.length - 1])}" r="4.5" fill="var(--accent)"/><text x="${pad}" y="${Y(1) - 4}" font-size="11" fill="var(--ink2)">rasmiy = 1,00</text></svg><p class="sub">Oxirgi hafta: xalq narxi rasmiydan ${pct(ys[ys.length - 1] - 1)} (${wr[wr.length - 1].n} ta xabar).</p>`;
+}
+
+function renderDisc() {
+  const reps = ALL().filter(x => x.old).slice(0, 8);
+  $("#v-chegirma").innerHTML = `
+  <div class="hello"><h1>Chegirma haqiqiymi?</h1><p>“−30%” deb yozilgan, lekin eski narx oldin sunʼiy oshirilgan boʻlishi mumkin. Yorliqni suratga oling yoki ikki narxni yozing.</p></div>
+  <button class="btn" id="d-cam">${IC.cam} Chegirma yorligʻini suratga olish</button>
+  <div class="row2"><button class="btn2" id="d-gal">Galereyadan</button><button class="btn2" id="d-demo">Namuna bilan sinash</button></div>
+  <section class="card">
+    <h2>Yozib tekshirish</h2>
+    <label class="f" for="d-prod">Mahsulot<select class="in" id="d-prod">${REF.products.map(p => `<option value="${p.c}" ${p.c === 1302 ? "selected" : ""}>${esc(p.n)} (${unitTxt(p.u)})</option>`).join("")}</select></label>
+    <div class="row2"><label class="f" for="d-was">Eski narx, soʻm<input class="in num" id="d-was" inputmode="numeric" placeholder="34 900"></label><label class="f" for="d-now">Aksiya narxi, soʻm<input class="in num" id="d-now" inputmode="numeric" placeholder="27 900"></label></div>
+    <div class="seg" role="group" aria-label="Joy turi" id="d-ty"><button data-ty="supermarket" aria-pressed="true">Supermarket</button><button data-ty="dokon" aria-pressed="false">Doʻkon</button><button data-ty="bozor" aria-pressed="false">Bozor</button></div>
+    <button class="btn" id="d-go">Tekshirish</button>
+    <div id="d-err" class="small" style="color:var(--crit)"></div>
+  </section>
+  <section class="card">
+    <h2>Qanday tekshiriladi</h2>
+    <ul class="checks">
+      <li class="ok">${IC.ok}<span>Chegirma sotuvchining oxirgi 30 kundagi eng past narxiga nisbatan hisoblanadi (Yevropa Ittifoqi Omnibus direktivasi, 6a-modda qoidasi).</span></li>
+      <li class="ok">${IC.ok}<span>“Eski narx” bozor va supermarketlardagi odatiy eng yuqori narx bilan solishtiriladi.</span></li>
+      <li class="ok">${IC.ok}<span>Aksiya narxi odatiy narxdan haqiqatan arzonmi, tekshiriladi.</span></li>
+      <li class="ok">${IC.ok}<span>Hech qachon tugamaydigan aksiyalar xabarlar tarixidan topiladi.</span></li>
+    </ul>
+  </section>
+  <section class="card"><h2>Soʻnggi chegirma xabarlari</h2>${reps.length ? `<div class="list">${reps.map(x => `<div class="li stripe ${x.d || ""}" style="padding-left:10px"><div class="grow"><div class="t">${esc(P[x.c].n)}</div><div class="s num">${fmt(x.old)} → ${fmt(x.price)} · ${esc(locLine(x.loc))} · ${ago(x.t)}</div></div>${x.d ? pill(x.d, "sm") : ""}</div>`).join("")}</div>` : `<div class="empty">Hali chegirma xabari yoʻq</div>`}</section>`;
+  let ty = "supermarket";
+  document.querySelectorAll("#d-ty button").forEach(b => b.onclick = () => { ty = b.dataset.ty; document.querySelectorAll("#d-ty button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); });
+  $("#d-cam").onclick = () => pickPhoto("chegirma", true);
+  $("#d-gal").onclick = () => pickPhoto("chegirma", false);
+  $("#d-demo").onclick = () => runDemo("chegirma");
+  $("#d-go").onclick = () => {
+    const was = +String($("#d-was").value).replace(/\D/g, ""), now = +String($("#d-now").value).replace(/\D/g, ""), c = +$("#d-prod").value;
+    if (!(was > 0 && now > 0)) { $("#d-err").textContent = "Ikkala narxni ham kiriting."; return; }
+    if (now >= was) { $("#d-err").textContent = "Aksiya narxi eski narxdan past boʻlishi kerak."; return; }
+    $("#d-err").textContent = "";
+    submitFlow({ src: "matn", kind: "chegirma", items: [{ c, price: now, qty: 1, old: was, pt: P[c].n }], text: "", tyHint: ty });
+  };
+}
+
+function renderData() {
+  const all = ALL(), acc = all.filter(accepted), photo = all.filter(x => x.src === "rasm").length;
+  const regs = new Set(all.map(x => x.loc && x.loc.r).filter(Boolean));
+  const dbState = !CAP.db ? "Server ulanmagan: xabarlar shu telefonda saqlanadi. Umumiy baza uchun README’dagi 3-usulni bajaring." : CAP.dbErr === "oflayn" ? "Internet yoʻq: xabarlar telefonda saqlanib, internet qaytganda yuboriladi." : CAP.dbErr ? "Serverdan maʼlumot olib boʻlmadi. Bir daqiqadan soʻng yana urinadi." : "Umumiy bazaga ulangan: har bir xabar barcha foydalanuvchilar uchun indeksga qoʻshiladi.";
+  $("#v-malumot").innerHTML = `
+  <div class="hello"><h1>Yigʻilgan maʼlumot</h1><p>Rasm va yozma xabarlardan avtomatik yigʻilayotgan narx bazasi.</p></div>
+  <section class="card">
+    <div class="tiles">
+      <div class="tile"><b class="num">${all.length}</b><span>Jami xabar</span></div>
+      <div class="tile"><b class="num">${all.length ? Math.round(acc.length / all.length * 100) : 0}%</b><span>Avtomatik qabul qilingan</span></div>
+      <div class="tile"><b class="num">${all.length ? Math.round(photo / all.length * 100) : 0}%</b><span>Rasm orqali</span></div>
+      <div class="tile"><b class="num">${regs.size}/14</b><span>Hudud qamrovi</span></div>
+    </div>
+    <p class="note">${dbState}</p>
+    <div class="row2"><button class="btn2" id="m-csv">CSV yuklab olish</button><button class="btn2" id="m-copy">CSV nusxalash</button></div>
+  </section>
+  <section class="card">
+    <h2>Maʼlumot qanday yigʻiladi</h2>
+    <ol class="pipe">
+      <li><span><b>Xaridor rasm yoki matn yuboradi</b>Hech qanday roʻyxatdan oʻtish shart emas.</span></li>
+      <li><span><b>AI yorliqni oʻqiydi</b>Mahsulot, narx, qadoq, eski narx va doʻkon nomi. Oʻzbek (lotin, kirill) va rus tilida.</span></li>
+      <li><span><b>Joylashuv avtomatik aniqlanadi</b>GPS, rasmdagi GPS yozuvi, yorliqdagi doʻkon nomi yoki oxirgi joylashuv. Aniq manzil saqlanmaydi: ~100 m aniqlik.</span></li>
+      <li><span><b>Avtomatik sifat nazorati</b>Gʻayrioddiy narx, takroriy xabar, ekran surati va boshqa xabarlardan keskin farq (robust z-ball) rad etiladi.</span></li>
+      <li><span><b>Rasmiy narx bilan solishtiriladi</b>narx.stat.uz viloyat oʻrtachasi, narxtahlil.uz supermarket narxlari va boshqa xaridorlar medianasi.</span></li>
+      <li><span><b>Indeks va ogohlantirishlar yangilanadi</b>Savat indeksi, narx sakrashlari, soxta chegirmalar.</span></li>
+    </ol>
+  </section>
+  <section class="card">
+    <h2>Bu maʼlumotdan nimalarda foydalanish mumkin</h2>
+    <ul class="uses">
+      <li><span class="ic">1</span><b>Haftalik inflyatsiya “nowcast”i</b><span class="who">Markaziy bank, Statistika qoʻmitasi</span><span style="grid-column:2">Rasmiy INI oy oxirida chiqadi; xalq indeksi narx oʻzgarishini bir necha kun ichida koʻrsatadi.</span></li>
+      <li><span class="ic">2</span><b>Til biriktirish va monopol narxni aniqlash</b><span class="who">Raqobat qoʻmitasi</span><span style="grid-column:2">Bir hududdagi sotuvchilar bir vaqtda narx oshirsa yoki narxlar bir xillashsa, signal beriladi.</span></li>
+      <li><span class="ic">3</span><b>Soxta chegirmalar boʻyicha shikoyat dalili</b><span class="who">Isteʼmolchilar huquqlarini himoya qilish</span><span style="grid-column:2">Har bir aksiya rasm, sana va joy bilan saqlanadi: tekshiruv uchun tayyor dalil.</span></li>
+      <li><span class="ic">4</span><b>Bayram oldi narx nazorati</b><span class="who">Hokimliklar, Raqobat qoʻmitasi</span><span style="grid-column:2">Navroʻz, Ramazon va Yangi yil oldidan qaysi mahsulot qayerda sakraganini darhol koʻrsatadi.</span></li>
+      <li><span class="ic">5</span><b>Hududiy narx farqi va taʼminot</b><span class="who">Viloyat hokimliklari, Qishloq xoʻjaligi vazirligi</span><span style="grid-column:2">Qayerda taqchillik borligini va qaysi bozorga mahsulot yetkazish kerakligini koʻrsatadi.</span></li>
+      <li><span class="ic">6</span><b>Boj va kvota taʼsirini oʻlchash</b><span class="who">Tadqiqotchilar, Iqtisodiyot vazirligi</span><span style="grid-column:2">Import tariflari va kvotalar chakana narxga qancha tez va qancha toʻliq oʻtishini haftalik maʼlumotda kuzatish.</span></li>
+      <li><span class="ic">7</span><b>Oila byudjeti va eng arzon joy</b><span class="who">Aholi</span><span style="grid-column:2">Yaqin bozorlardagi narxni solishtirib, qayerdan xarid qilish arzonligini bilish.</span></li>
+      <li><span class="ic">8</span><b>Narx yorligʻi rasmlari toʻplami</b><span class="who">AI ishlab chiquvchilar</span><span style="grid-column:2">Oʻzbek tilidagi qoʻlda yozilgan yorliqlarni oʻqiydigan mahalliy model uchun oʻquv toʻplami.</span></li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Soʻnggi xabarlar</h2>
+    ${all.length ? `<div class="tbwrap"><table class="tb"><thead><tr><th>Vaqt</th><th>Mahsulot</th><th class="r">Narx</th><th>Joy</th><th>Holat</th></tr></thead><tbody>${all.slice(0, 15).map(x => `<tr><td class="num">${new Date(x.t).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td>${esc(P[x.c].n)}</td><td class="r num">${fmt(x.up)}</td><td>${esc(locLine(x.loc))}</td><td>${accepted(x) ? "qabul" : "rad"}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Hali xabar yoʻq</div>`}
+  </section>
+  <section class="card">
+    <h2>Manbalar</h2>
+    <ul class="checks">
+      <li class="ok">${IC.ok}<span><a href="https://narx.stat.uz/prices">narx.stat.uz</a>: 30 mahsulotning respublika va 14 viloyat boʻyicha oʻrtacha narxi, ${dfull(REF.week)} kuzatuvi; namunaviy savat miqdorlari. ${CAP.refFromDb ? "ref.json fayli orqali yangilangan." : `Ilovaga ${dfull(REF.fetched)} da yuklangan.`}</span></li>
+      <li class="ok">${IC.ok}<span><a href="https://narxtahlil.uz/supermarkets/">narxtahlil.uz</a>: Baraka, Havas, Korzinka, Magnit, Makro, Olma supermarket narxlari (${esc(REF.smNote)}).</span></li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2>Sozlamalar</h2>
+    <button class="btn2" id="m-loc">Joylashuvni qayta aniqlash</button>
+    ${NP("LocalNotifications") ? `<button class="btn2" id="m-remind">${LS.get("nr-remind", 0) ? "Haftalik eslatmani oʻchirish" : "Har dushanba narx eslatmasi"}</button>` : ""}
+    <button class="btn2" id="m-clear">Shu telefondagi xabarlarni oʻchirish</button>
+    <a class="btn2" href="privacy.html" style="text-decoration:none;color:inherit">Maxfiylik siyosati</a>
+    <p class="note">AI: ${CAP.sample ? (CAP.img ? "rasm oʻqish yoqilgan" : "matn tahlili yoqilgan, rasm oʻqish yoʻq") : "server ulanmagan (narxni yozib yuborish ishlaydi)"}. Joylashuv: ${GEO === "ruxsat" ? "GPS ruxsat berilgan" : GEO === "sinalmagan" ? "hali soʻralmagan" : "GPS ruxsati berilmagan, rasm va yozuvdan aniqlanadi"}.</p>
+  </section>`;
+  $("#m-csv").style.display = CAP.dl && !NATIVE ? "" : "none";
+  const rb = $("#m-remind"); if (rb) rb.onclick = async () => {
+    const N = NP("LocalNotifications");
+    try {
+      if (LS.get("nr-remind", 0)) { await N.cancel({ notifications: [{ id: 7001 }] }); LS.set("nr-remind", 0); toast("Eslatma oʻchirildi."); }
+      else {
+        let p = await N.checkPermissions(); if (p.display !== "granted") p = await N.requestPermissions();
+        if (p.display !== "granted") { toast("Bildirishnomaga ruxsat berilmadi."); return; }
+        await N.schedule({ notifications: [{ id: 7001, title: "NarxRadar", body: "Yangi haftalik narxlar: bozorga borishdan oldin tekshirib oling.", schedule: { on: { weekday: 2, hour: 10, minute: 0 }, allowWhileIdle: false } }] });
+        LS.set("nr-remind", 1); toast("Har dushanba soat 10:00 da eslatiladi.");
+      }
+    } catch (e) { toast("Eslatmani sozlab boʻlmadi."); }
+    renderData();
+  };
+  $("#m-csv").onclick = async () => { try { await CAP.dl.save({ filename: `narxradar-${new Date().toISOString().slice(0, 10)}.csv`, data: toCSV() }); } catch (e) { toast("Yuklab olish bekor qilindi."); } };
+  $("#m-copy").onclick = async () => { try { await navigator.clipboard.writeText(toCSV()); toast("CSV nusxalandi."); } catch (e) { toast("Nusxalash bloklandi."); } };
+  $("#m-loc").onclick = () => openLocSheet(true);
+  $("#m-clear").onclick = () => { LOCAL = []; LS.set("nr-local", []); toast("Shu qurilmadagi xabarlar oʻchirildi."); renderData(); };
+}
+function toCSV() {
+  const rows = [["vaqt", "hafta", "kod", "mahsulot", "yozilgan_nom", "narx", "qadoq", "birlik_narxi", "birlik", "eski_narx", "manba", "ai_ishonchi", "viloyat", "joy", "joy_turi", "joylashuv_usuli", "kenglik", "uzunlik", "baho", "farq", "chegirma_bahosi", "qabul", "ogirlik"]];
+  for (const x of ALL()) rows.push([x.t, x.wk, x.c, P[x.c].n, x.pt || "", x.price, x.q, Math.round(x.up), P[x.c].u, x.old || "", x.src, x.conf || "", x.loc && x.loc.r || "", x.loc && (x.loc.chain || x.loc.pl) || "", x.loc && x.loc.ty || "", x.loc && x.loc.m || "", x.loc && x.loc.la || "", x.loc && x.loc.lo || "", x.v ? x.v.lab : "", x.v ? (x.v.g * 100).toFixed(1) : "", x.d || "", accepted(x) ? 1 : 0, x.qa ? x.qa.w : ""]);
+  return rows.map(r => r.map(v => { const s = String(v ?? ""); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(",")).join("\n");
+}
+
+/* ============ Oyna (sheet) ============ */
+let SHEET_LOCK = false;
+function openSheet(title, html) { $("#sheet-title").textContent = title; $("#sheet-body").innerHTML = html; $("#sheet").classList.add("open"); $("#sheet-body").scrollTop = 0; setTimeout(() => $("#sheet-close").focus(), 50); }
+function closeSheet() { $("#sheet").classList.remove("open"); SHEET_LOCK = false; render(TAB); }
+$("#sheet-close").onclick = closeSheet;
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sheet").classList.contains("open")) closeSheet(); });
+
+/* Joylashuv oynasi */
+function regionGrid(sel) { return `<div class="regiongrid">${REGIONS.map(x => `<button data-r="${x.c}" aria-pressed="${x.c === sel}">${esc(x.s)}</button>`).join("")}</div>`; }
+function openLocSheet(tryGps) {
+  const body = () => `
+  <section class="card"><h3>Hozirgi joylashuv</h3><p style="margin:0;font-weight:700">${esc(locLine(LOC))}</p><p class="sub">${LOC ? "Usul: " + (LOCM[LOC.m] || LOC.m) + (LOC.la ? ` · ${LOC.la}, ${LOC.lo}` : "") : "Hali aniqlanmagan"}</p>
+  <button class="btn" id="l-gps">${IC.pin} GPS orqali aniqlash</button><p class="sub" id="l-msg"></p></section>
+  <section class="card"><h3>Viloyatni tanlash</h3><p class="sub">GPS ishlamasa, bir marta tanlang. Bozor yoki doʻkon nomi yorliqdan va yozuvdan avtomatik aniqlanadi.</p>${regionGrid(LOC && LOC.r)}</section>
+  <section class="card"><h3>Sinov uchun GPS nuqtasi</h3><p class="sub">Taqdimotda avtomatik aniqlashni koʻrsatish uchun: tayyor koordinata xuddi GPS kabi qayta ishlanadi.</p>
+  <div class="chips"><button class="chip" data-t="41.3262,69.2351">Chorsu bozori yaqini</button><button class="chip" data-t="39.6605,66.9822">Siyob bozori yaqini</button><button class="chip" data-t="40.7700,72.3200">Andijon shahri</button></div></section>`;
+  openSheet("Joylashuv", body());
+  const wire = () => {
+    $("#l-gps").onclick = async () => {
+      $("#l-msg").textContent = "Aniqlanmoqda…"; GEO = "sinalmagan"; const g = await getGPS(8000);
+      if (g) { saveLoc(locFromCoords(g.la, g.lo, "gps", g.acc)); $("#sheet-body").innerHTML = body(); wire(); toast("Joylashuv aniqlandi: " + locLine(LOC)); }
+      else $("#l-msg").textContent = GEO === "rad" ? "Joylashuvga ruxsat berilmadi. Telefon sozlamalarida brauzer (yoki NarxRadar) uchun joylashuvni yoqing, yoki viloyatni tanlang." : "GPS javob bermadi. Viloyatni tanlang.";
+    };
+    document.querySelectorAll("#sheet-body [data-r]").forEach(b => b.onclick = () => { saveLoc({ la: null, lo: null, r: b.dataset.r, pl: null, ty: null, m: "tanlangan", ts: Date.now() }); $("#sheet-body").innerHTML = body(); wire(); toast("Hudud saqlandi: " + RG[b.dataset.r].s); });
+    document.querySelectorAll("#sheet-body [data-t]").forEach(b => b.onclick = () => { const [la, lo] = b.dataset.t.split(",").map(Number); saveLoc(locFromCoords(la, lo, "sinov")); $("#sheet-body").innerHTML = body(); wire(); toast("Aniqlandi: " + locLine(LOC)); });
+  };
+  wire();
+  if (tryGps) $("#l-gps").click();
+}
+$("#locchip").onclick = () => openLocSheet(false);
+
+/* Yozib yuborish oynasi */
+function openWrite(prefill = "") {
+  let ty = (LOC && LOC.ty) || "bozor", disc = false, chosen = null;
+  openSheet("Yozib yuborish", `
+  <label class="f" for="w-t">Nima va qancha?<input class="in huge" id="w-t" autocomplete="off" placeholder="Masalan: mol goʻshti 132 000" value="${esc(prefill)}"></label>
+  <div class="parse" id="w-parse" aria-live="polite"></div>
+  <div><p class="cathead" style="margin:0 0 8px">Yoki mahsulotni tanlang</p><div class="chips" id="w-chips">${POPULAR.map(c => `<button class="chip" data-c="${c}" aria-pressed="false">${esc(P[c].n)}</button>`).join("")}</div></div>
+  <label class="f" for="w-p">Narx, soʻm<input class="in huge num" id="w-p" inputmode="numeric" placeholder="132 000"></label>
+  <div><p class="cathead" style="margin:0 0 8px">Qayerda?</p><div class="seg" role="group" aria-label="Joy turi" id="w-ty"><button data-ty="bozor">Bozor</button><button data-ty="supermarket">Supermarket</button><button data-ty="dokon">Doʻkon</button></div></div>
+  <button class="chip" id="w-disc" aria-pressed="false">Chegirma bor (eski narxni ham yozaman)</button>
+  <label class="f" for="w-old" id="w-oldw" hidden>Eski narx, soʻm<input class="in num" id="w-old" inputmode="numeric" placeholder="160 000"></label>
+  <button class="btn" id="w-go" disabled>Tekshirish va yuborish</button>
+  <p class="note">${IC.pin.replace("<svg", '<svg style="width:15px;height:15px;vertical-align:-2px"')} Joylashuv avtomatik qoʻshiladi: ${esc(locLine(LOC))}. Bozor yoki doʻkon nomini yozsangiz (masalan “Chorsu” yoki “Korzinka”), u ham aniqlanadi.</p>`);
+  SHEET_LOCK = true;
+  const setTy = t => { ty = t; document.querySelectorAll("#w-ty button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.ty === t))); };
+  setTy(ty);
+  document.querySelectorAll("#w-ty button").forEach(b => b.onclick = () => setTy(b.dataset.ty));
+  const upd = () => {
+    const t = $("#w-t").value, pr = parseText(t);
+    const tp = placeFromText(t); if (tp && tp.ty) setTy(tp.ty);
+    const c = chosen || pr.c, price = +String($("#w-p").value).replace(/\D/g, "") || pr.price;
+    if (pr.old && !disc) { disc = true; $("#w-disc").setAttribute("aria-pressed", "true"); $("#w-oldw").hidden = false; $("#w-old").value = pr.old; }
+    $("#w-parse").innerHTML = t.trim() || chosen ? `<span class="${c ? "ok" : "no"}">Mahsulot: ${c ? esc(P[c].n) : "aniqlanmadi"}</span><span class="${price ? "ok" : "no"}">Narx: ${price ? fmt(price) + " soʻm" : "yoʻq"}</span>${pr.qty ? `<span class="ok">Miqdor: ${dec(pr.qty, pr.qty % 1 ? 2 : 0)} ${pr.qunit}</span>` : ""}${tp && tp.pl ? `<span class="ok">Joy: ${esc(tp.pl)}</span>` : ""}` : "";
+    $("#w-go").disabled = !(t.trim() || (chosen && price));
+  };
+  $("#w-t").oninput = upd; $("#w-p").oninput = upd;
+  document.querySelectorAll("#w-chips [data-c]").forEach(b => b.onclick = () => { chosen = chosen === +b.dataset.c ? null : +b.dataset.c; document.querySelectorAll("#w-chips [data-c]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.c === chosen))); upd(); });
+  $("#w-disc").onclick = () => { disc = !disc; $("#w-disc").setAttribute("aria-pressed", String(disc)); $("#w-oldw").hidden = !disc; };
+  $("#w-go").onclick = async () => {
+    const t = $("#w-t").value, pr = parseText(t);
+    let c = chosen || pr.c, price = +String($("#w-p").value).replace(/\D/g, "") || pr.price, qty = pr.qty, qunit = pr.qunit, old = disc ? (+String($("#w-old").value).replace(/\D/g, "") || pr.old) : null;
+    let pt = t.trim() || (c ? P[c].n : "");
+    if ((!c || !price) && CAP.sample && t.trim()) {
+      $("#w-go").disabled = true; $("#w-go").textContent = "AI tushunmoqda…";
+      try { const a = await aiParseText(t); if (a) { if (!c && P[a.product_code]) c = a.product_code; if (!c && a.product_text) c = matchProduct(a.product_text).c; if (!price && a.price_uzs) price = +a.price_uzs; if (!qty && a.pack_qty) { qty = +a.pack_qty; qunit = a.pack_unit; } if (!old && a.old_price_uzs) old = +a.old_price_uzs; } } catch (e) { }
+      $("#w-go").disabled = false; $("#w-go").textContent = "Tekshirish va yuborish";
+    }
+    if (!c) { $("#w-parse").innerHTML = `<span class="no">Mahsulotni tushunmadim. Roʻyxatdan tanlang yoki boshqacha yozing.</span>`; return; }
+    if (!price) { $("#w-parse").innerHTML = `<span class="no">Narxni yozing (masalan 132 000).</span>`; $("#w-p").focus(); return; }
+    if (old && old <= price) old = null;
+    submitFlow({ src: "matn", kind: old ? "chegirma" : "narx", items: [{ c, price, qty, qunit, old, pt }], text: t, tyHint: ty });
+  };
+  upd(); setTimeout(() => $("#w-t").focus(), 300);
+}
+
+/* Rasm tanlash */
+let PICK_KIND = "narx";
+async function nativePhoto(C, kind, camera) {
+  try {
+    const r = camera ? await C.takePhoto({ quality: 85, targetWidth: 1600, targetHeight: 1600, correctOrientation: true, saveToGallery: false, editable: "no" })
+      : ((await C.chooseFromGallery({ mediaType: 0, allowMultipleSelection: false, limit: 1, quality: 85 })).results || [])[0];
+    if (!r || !r.webPath) return;
+    const blob = await (await fetch(r.webPath)).blob();
+    photoFlow(blob, kind, null);
+  } catch (e) { if (!/cancel/i.test(String(e && e.message))) toast("Kamera ochilmadi. Telefon sozlamalarida NarxRadar uchun kamera ruxsatini yoqing."); }
+}
+function pickPhoto(kind, camera) { const C = NP("Camera"); if (C) { nativePhoto(C, kind, camera); return; } PICK_KIND = kind; const inp = camera ? $("#f-cam") : $("#f-gal"); inp.value = ""; inp.click(); }
+["#f-cam", "#f-gal"].forEach(s => $(s).addEventListener("change", e => { const f = e.target.files && e.target.files[0]; if (f) photoFlow(f, PICK_KIND, null); }));
+async function runDemo(kind) { const { canvas, demo } = drawTag(kind); const blob = await canvasBlob(canvas); photoFlow(blob, kind, demo); }
+
+async function shareText(title, text) {
+  const S = NP("Share");
+  try { if (S) { await S.share({ title, text, dialogTitle: "Ulashish" }); return; } if (navigator.share) { await navigator.share({ title, text }); return; } await navigator.clipboard.writeText(text); toast("Matn nusxalandi: Telegram’ga joylashingiz mumkin."); }
+  catch (e) { }
+}
+function stepsHTML(steps) { return `<div class="steps">${steps.map(s => `<div class="step ${s.st}"><span class="st">${s.st === "ok" ? IC.ok : s.st === "bad" ? IC.warn : ""}</span><span>${esc(s.l)}${s.d ? `<small>${esc(s.d)}</small>` : ""}</span></div>`).join("")}</div>`; }
+
+async function photoFlow(file, kind, demo) {
+  SHEET_LOCK = true;
+  const url = URL.createObjectURL(file);
+  const S = [{ l: "AI rasmni oʻqiydi", st: "run" }, { l: "Joylashuv", st: "" }, { l: "Rasmiy narx bilan solishtirish", st: "" }, { l: "Avtomatik tekshiruv", st: "" }];
+  const draw = () => { $("#sheet-body").innerHTML = `<img class="photo" src="${url}" alt="Yuborilgan narx yorligʻi">${stepsHTML(S)}<div id="pf-extra"></div>`; };
+  openSheet(kind === "chegirma" ? "Chegirma tekshiruvi" : "Narx tekshiruvi", ""); draw();
+  let res = null, how = "AI";
+  if (CAP.sample && CAP.img) {
+    try { res = await aiReadPhoto(await shrink(file)); } catch (e) { res = null; S[0].d = aiErr(e); }
+  }
+  if (!res && demo) { res = demo; how = "namuna"; S[0].d = CAP.sample && CAP.img ? "AI javob bermadi: namunaviy yorliqning maʼlum qiymatlari ishlatildi" : "AI server ulanmagan: namunaviy yorliqning maʼlum qiymatlari ishlatildi"; }
+  else if (res && demo) how = "namuna-ai";
+  if (!res || !res.is_price_tag || !res.items || !res.items.length || !res.items[0].price_uzs) {
+    S[0].st = "bad"; S[0].d = S[0].d || (res ? "Rasmda oʻqiladigan narx topilmadi. Yorliqni yaqinroqdan, tekis suratga oling." : "AI server ulanmagan, shuning uchun rasmni oʻqib boʻlmaydi.");
+    draw();
+    $("#pf-extra").innerHTML = `<p class="note">Narxni yozib yuborishingiz mumkin: tekshiruv xuddi shunday avtomatik boʻladi.</p><button class="btn" id="pf-write">Yozib yuborish</button><button class="btn2" id="pf-again">Qayta suratga olish</button>`;
+    $("#pf-write").onclick = () => openWrite(); $("#pf-again").onclick = () => pickPhoto(kind, true);
+    return;
+  }
+  S[0].st = "ok"; S[0].d = S[0].d || `Oʻqildi: “${res.items.map(i => i.product_text).join(", ")}” · ishonch: ${({ high: "yuqori", medium: "oʻrtacha", low: "past" })[res.confidence] || "nomaʼlum"}`;
+  draw();
+  const items = res.items.slice(0, 4).map(i => {
+    let c = P[i.product_code] ? +i.product_code : matchProduct(i.product_text || "").c;
+    const ptext = String(i.product_text || "");
+    const chk = matchProduct(ptext); if (chk.c && chk.s >= .9 && chk.c !== c) c = chk.c;
+    let qunit = i.pack_unit, qty = i.pack_qty ? +i.pack_qty : null;
+    return { c, price: +i.price_uzs, qty, qunit, old: i.old_price_uzs ? +i.old_price_uzs : null, pt: ptext.slice(0, 80) };
+  }).filter(i => i.c && i.price > 0);
+  if (!items.length) { S[0].st = "bad"; S[0].d = `“${res.items[0].product_text}” oʻqildi, lekin bu mahsulot hali kuzatiladigan 30 ta mahsulot qatorida yoʻq.`; draw(); return; }
+  submitFlow({ src: how.startsWith("namuna") ? "namuna" : "rasm", kind, items, file, store: res.store_name, aiType: res.place_type, conf: res.confidence, issue: res.photo_issue, steps: S, url, redraw: draw });
+}
+
+async function submitFlow(o) {
+  SHEET_LOCK = true;
+  const S = o.steps || [{ l: "Matn tahlil qilindi", st: "ok", d: o.items.map(i => `${P[i.c].n} · ${fmt(i.price)} soʻm`).join(", ") }, { l: "Joylashuv", st: "" }, { l: "Rasmiy narx bilan solishtirish", st: "" }, { l: "Avtomatik tekshiruv", st: "" }];
+  const draw = o.redraw || (() => { $("#sheet-body").innerHTML = `${stepsHTML(S)}<div id="pf-extra"></div>`; });
+  if (!o.steps) openSheet(o.kind === "chegirma" ? "Chegirma tekshiruvi" : "Narx tekshiruvi", "");
+  S[1].st = "run"; draw();
+  let loc = await resolveLocation({ file: o.file, text: o.text, store: o.store, aiType: o.aiType });
+  if (!loc) {
+    S[1].st = "bad"; S[1].d = "Avtomatik aniqlab boʻlmadi"; draw();
+    const r = await new Promise(res => {
+      $("#pf-extra").innerHTML = `<section class="card"><h3>Qaysi hududdasiz?</h3><p class="sub">Bir marta tanlang, keyingi safar eslab qolinadi.</p>${regionGrid(null)}</section>`;
+      document.querySelectorAll("#pf-extra [data-r]").forEach(b => b.onclick = () => res(b.dataset.r));
+    });
+    loc = { la: null, lo: null, r, pl: null, ty: null, m: "tanlangan", ts: Date.now() }; saveLoc(loc);
+    const tp = placeFromText([o.text, o.store].filter(Boolean).join(" ")); if (tp) { if (tp.pl) loc.pl = tp.pl; if (tp.ty) loc.ty = tp.ty; if (tp.chain) loc.chain = tp.chain; }
+    $("#pf-extra").innerHTML = "";
+  }
+  if (o.tyHint && (!loc.ty || o.src === "matn")) loc = { ...loc, ty: o.tyHint };
+  if (!loc.ty) loc.ty = o.aiType || "bozor";
+  S[1].st = "ok"; S[1].d = `${locLine(loc)} · ${LOCM[loc.m] || loc.m}${loc.via === "matn" && loc.m !== "matn" ? " + yozuvdan" : ""}`;
+  S[2].st = "run"; draw();
+  await new Promise(r => setTimeout(r, 250));
+  const t = new Date(), wk = isoWeek(t), reps = [];
+  for (const it of o.items) {
+    const q = baseQty(it.c, it.qty, it.qunit, it.price), up = it.price / q;
+    const rep = { id: uid8(), t: t.toISOString(), wk, c: it.c, pt: it.pt, price: it.price, q: +q.toFixed(3), up: Math.round(up), old: it.old || null, src: o.src, conf: o.conf || null, issue: o.issue || null, loc: { r: loc.r, pl: loc.pl || null, chain: loc.chain || null, ty: loc.ty, m: loc.m, la: loc.la ?? null, lo: loc.lo ?? null } };
+    const v = priceVerdict(rep.c, rep.up, loc.r, loc.ty);
+    rep.v = { lab: v.lab, g: +v.g.toFixed(4), b: Math.round(v.bench), bl: v.benchLbl };
+    let dv = null;
+    if (rep.old) { const oq = rep.old / q; dv = discountVerdict({ c: rep.c, was: oq, now: rep.up, r: loc.r, ty: loc.ty, pl: loc.pl, chain: loc.chain, excl: rep.id }); rep.d = dv.lab; rep.ds = dv.score; }
+    rep.qa = quality(rep);
+    reps.push({ rep, v, dv });
+  }
+  S[2].st = "ok"; S[2].d = reps.map(({ rep, v }) => `${P[rep.c].n}: ${v.benchLbl} ${fmt(v.bench)} soʻm`).join("; ");
+  S[3].st = "run"; draw();
+  const saved = [];
+  for (const x of reps) saved.push(o.src === "namuna" ? "namuna" : await saveRep(x.rep));
+  S[3].st = reps.every(x => x.rep.qa.ok) ? "ok" : "bad";
+  S[3].d = reps.map(x => x.rep.qa.ok ? "qabul qilindi" : "indeksga kiritilmadi").join(", ") + (saved[0] === "baza" ? " · umumiy bazaga yozildi" : saved[0] === "qurilma" ? " · shu qurilmada saqlandi" : " · namunaviy yorliq: bazaga yozilmadi");
+  draw();
+  showResult(reps, o, saved);
+}
+
+function showResult(reps, o, saved) {
+  const html = reps.map(({ rep, v, dv }, k) => {
+    const p = P[rep.c], mx = Math.max(rep.up, v.bench, v.rep, v.cr.n ? v.cr.med : 0, v.sm ? v.sm.max : 0);
+    const barRow = (l, val, cls = "") => `<div class="bar ${cls}"><span>${l}</span><div class="track"><div class="fill" style="width:${(val / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(val)}</span></div>`;
+    const sentence = v.lab === "arzon" ? `Bu narx ${v.benchLbl}dan ${pct(-v.g, 0)} arzon. Yaxshi narx.` : v.lab === "adolatli" ? `Bu narx ${v.benchLbl}ga yaqin (${pct(v.g, 0)}). Odatiy oraliqda.` : v.lab === "qimmat" ? `Bu narx ${v.benchLbl}dan ${pct(v.g, 0)} qimmat. Boshqa rastani koʻrib chiqing.` : `Bu narx ${v.benchLbl}dan ${pct(v.g, 0)} qimmat. Xavf signali sifatida tahlilga yuborildi.`;
+    return `<section class="card stripe ${dv ? dv.lab : v.lab}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><h2>${esc(p.n)}</h2><p class="sub">${esc(locLine({ ...rep.loc }))}${rep.loc.ty ? " · " + ({ bozor: "bozor", supermarket: "supermarket", dokon: "doʻkon" })[rep.loc.ty] : ""}</p></div></div>
+      <div class="big num">${fmt(rep.up)} <span class="unit">${perU(rep.c)}</span></div>
+      ${rep.q !== 1 ? `<p class="sub">Yorliqda ${fmt(rep.price)} soʻm, ${dec(rep.q * (p.u === "10 dona" ? 10 : 1), rep.q % 1 && p.u !== "10 dona" ? 2 : 0)} ${p.u === "10 dona" ? "dona" : unitTxt(p.u)} uchun → bir ${p.u === "10 dona" ? "oʻnlik" : unitTxt(p.u)} narxi hisoblandi.</p>` : ""}
+      <div>${pill(v.lab, "lg")}</div>
+      <p style="margin:0">${sentence}</p>
+      <div class="cmp">${barRow("Siz yuborgan", rep.up, "you me")}${v.reg ? barRow(esc(RG[rep.loc.r].s) + " oʻrt.", v.reg) : ""}${barRow("Respublika oʻrt.", v.rep)}${v.sm ? barRow("Supermarket (max)", v.sm.max) : ""}${v.cr.n ? barRow(`Xaridorlar (${v.cr.n})`, v.cr.med) : ""}</div>
+      ${dv ? `<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px"><h3>Chegirma: ${fmt(rep.old)} → ${fmt(rep.price)} soʻm (eʼlon −${Math.round(dv.claim * 100)}%)</h3><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${pill(dv.lab, "lg")}<b class="num">${dv.score}/100 xavf</b></div><div class="meter"><i style="width:${dv.score}%;background:${dv.lab === "soxta" ? "var(--crit)" : dv.lab === "chalgituvchi" ? "var(--warn)" : "var(--good)"}"></i></div><div class="why">${dv.parts.map(x => `<div class="w"><b>${esc(x.l)}</b><span class="pts num">${Math.round(x.pts)}/${x.max}</span><span class="tx">${esc(x.tx)}</span><div class="pb"><i style="width:${(x.pts / x.max * 100).toFixed(0)}%"></i></div></div>`).join("")}</div></div>` : ""}
+      <ul class="checks">${rep.qa.why.length ? rep.qa.why.map(w => `<li class="no">${IC.warn}<span>${esc(w)}</span></li>`).join("") : `<li class="ok">${IC.ok}<span>Sifat nazoratidan oʻtdi: narx real oraliqda, takror emas, joylashuv bor.</span></li>`}</ul>
+      <button class="btn2" data-share="${k}">Natijani ulashish</button>
+      ${CAP.sample ? `<div id="ai-${k}"><button class="btn2" data-ai="${k}">AI tushuntirib bersin</button></div>` : ""}
+    </section>`;
+  }).join("");
+  $("#pf-extra").innerHTML = html + `<div class="row2"><button class="btn" id="r-again">${IC.cam} Yana yuborish</button><button class="btn2" id="r-home">Tayyor</button></div>
+  ${saved[0] === "qurilma" ? `<p class="note">Xabar shu qurilmada saqlandi${CAP.db ? ": internet qaytganda serverga avtomatik yuboriladi" : ": umumiy baza uchun server ulanmagan"}. Indeks va tarix uchun baribir ishlatiladi.</p>` : ""}`;
+  $("#r-again").onclick = () => o.src === "matn" ? openWrite() : pickPhoto(o.kind, true);
+  $("#r-home").onclick = () => { closeSheet(); setTab(o.kind === "chegirma" ? "chegirma" : "asosiy"); };
+  document.querySelectorAll("#pf-extra [data-share]").forEach(b => b.onclick = () => {
+    const { rep, v, dv } = reps[+b.dataset.share];
+    const t = `NarxRadar: ${P[rep.c].n} ${fmt(rep.up)} ${perU(rep.c)} (${locLine(rep.loc)}): ${VL[v.lab]}, ${v.benchLbl} ${fmt(v.bench)} soʻm (${pct(v.g, 0)}).` + (dv ? ` Chegirma: ${VL[dv.lab]} (${dv.score}/100 xavf).` : "");
+    shareText("NarxRadar", t);
+  });
+  document.querySelectorAll("#pf-extra [data-ai]").forEach(b => b.onclick = async () => {
+    const { rep, v, dv } = reps[+b.dataset.ai], box = $("#ai-" + b.dataset.ai);
+    box.innerHTML = `<p class="sub">AI yozmoqda…</p>`;
+    const ctx = { mahsulot: P[rep.c].n, narx: rep.up, birlik: P[rep.c].u, joy: locLine(rep.loc), joy_turi: rep.loc.ty, solishtirma: v.benchLbl, solishtirma_narx: Math.round(v.bench), farq: pct(v.g), baho: VL[v.lab], respublika: v.rep, xaridorlar_medianasi: v.cr.n ? Math.round(v.cr.med) : null, chegirma: dv ? { eski: Math.round(rep.old), yangi: rep.price, baho: VL[dv.lab], xavf: dv.score, sabablar: dv.parts.filter(x => x.pts > 0).map(x => x.tx) } : null };
+    try { const tx = await aiExplain("price", ctx); box.innerHTML = `<div class="ai"><b>AI izohi</b>${esc(tx)}</div>`; }
+    catch (e) { box.innerHTML = `<p class="note">${aiErr(e)}</p>`; }
+  });
+  $("#pf-extra").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ============ Birinchi ochilish ============ */
+function onboarding() {
+  const o = $("#onb"); o.hidden = false;
+  o.innerHTML = `
+  <div class="onb-logo"><svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="11" fill="var(--accent)"/><circle cx="20" cy="22" r="12" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" opacity=".5"/><circle cx="20" cy="22" r="6.5" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" opacity=".8"/><path d="M20 22 L30 12.5" stroke="var(--accent-ink)" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="22" r="2.5" fill="var(--accent-ink)"/></svg><b>NarxRadar</b></div>
+  <h1>Bozordagi narx adolatlimi? Bir soniyada bilib oling.</h1>
+  <ul class="feat">
+    <li><span class="ico">${IC.cam.replace("<svg", '<svg width="22" height="22"')}</span><span><b>Rasmga oling</b><br><span class="muted">AI narx yorligʻini oʻqiydi. Yozib yuborish ham mumkin.</span></span></li>
+    <li><span class="ico">${IC.pin.replace("<svg", '<svg width="22" height="22"')}</span><span><b>Joyingiz avtomatik aniqlanadi</b><br><span class="muted">Narx aynan siz turgan viloyat va bozor bilan solishtiriladi. Aniq manzil saqlanmaydi.</span></span></li>
+    <li><span class="ico">${IC.pct.replace("<svg", '<svg width="22" height="22"')}</span><span><b>Soxta chegirmani fosh qiling</b><br><span class="muted">“−30%” haqiqiymi yoki eski narx oshirilganmi, tekshiradi.</span></span></li>
+  </ul>
+  <button class="btn" id="o-ok">${IC.pin} Joylashuvga ruxsat berish</button>
+  <p class="sub" id="o-msg" aria-live="polite"></p>
+  <div id="o-reg"></div>
+  <button class="linkbtn" id="o-skip">Keyinroq</button>`;
+  const done = () => { LS.set("nr-onb", 1); o.hidden = true; renderAll(); };
+  $("#o-skip").onclick = done;
+  $("#o-ok").onclick = async () => {
+    $("#o-msg").textContent = "Joylashuv soʻralmoqda…"; const g = await getGPS(9000);
+    if (g) { saveLoc(locFromCoords(g.la, g.lo, "gps", g.acc)); $("#o-msg").textContent = "Aniqlandi: " + locLine(LOC); setTimeout(done, 900); return; }
+    $("#o-msg").textContent = "Joylashuvga ruxsat berilmadi. Uni keyinroq telefon sozlamalaridan yoqishingiz mumkin. Ungacha joylashuv rasmdagi GPS yozuvidan va yorliqdagi doʻkon nomidan olinadi. Hozircha viloyatingizni bir marta tanlang:";
+    $("#o-reg").innerHTML = regionGrid(null);
+    document.querySelectorAll("#o-reg [data-r]").forEach(b => b.onclick = () => { saveLoc({ la: null, lo: null, r: b.dataset.r, pl: null, ty: null, m: "tanlangan", ts: Date.now() }); done(); });
+  };
+}
+
+/* ============ Ishga tushirish ============ */
+document.querySelectorAll(".tabbar button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== TAB) setTab(h, false); });
+setTab(TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "asosiy", false);
+renderLocChip();
+if (!LS.get("nr-onb", 0)) onboarding();
+if (!NATIVE && "serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("./sw.js").catch(() => { });
+if (NATIVE || location.protocol.startsWith("http")) fetch("./ref.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(r => {
+  if (r && Array.isArray(r.products) && r.products.length > 10 && r.week >= REF.week) { CAP.refFromDb = r.week > REF0.week; REF = r; indexRef(); renderAll(); }
+}).catch(() => { });
+initServer();
+</script>
+</body>
+</html>

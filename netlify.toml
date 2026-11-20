@@ -1,0 +1,19 @@
+# NarxRadar: Netlify sozlamasi
+[build]
+  publish = "docs"
+  command = "echo 'build shart emas'"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Permissions-Policy = "geolocation=(self), camera=(self)"
+    X-Content-Type-Options = "nosniff"

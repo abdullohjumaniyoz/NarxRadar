@@ -1,0 +1,44 @@
+# iOS ilovani Codemagic'ning bulutdagi Mac kompyuterida yigʻadi va TestFlight'ga yuboradi.
+# Mac kerak emas. Bepul rejada har oy 500 daqiqa macOS M2 vaqti beriladi.
+# Sozlash: README.md → "iPhone (App Store)" boʻlimi.
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: NarxRadar ASC        # Codemagic → Integrations da bergan nomingiz
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: uz.narxradar.app
+      vars:
+        APP_STORE_APPLE_ID: 0000000000        # App Store Connect → Ilova → App Information → Apple ID
+      node: 22
+      xcode: latest
+    scripts:
+      - name: npm paketlarini oʻrnatish
+        script: npm ci
+      - name: Veb fayllarni iOS loyihasiga koʻchirish
+        script: npx cap sync ios
+      - name: Imzo sozlamalari
+        script: xcode-project use-profiles
+      - name: Build raqamini oshirish
+        script: |
+          cd $CM_BUILD_DIR/ios/App
+          LATEST=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          NEW=$((LATEST + 1))
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEW;/g" App.xcodeproj/project.pbxproj
+          echo "Build raqami: $NEW"
+      - name: IPA yigʻish
+        script: |
+          cd $CM_BUILD_DIR/ios/App
+          xcode-project build-ipa --project "App.xcodeproj" --scheme "App"
+    artifacts:
+      - ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false

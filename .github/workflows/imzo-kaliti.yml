@@ -1,0 +1,31 @@
+# Google Play uchun imzo kaliti (upload key) yaratadi. Faqat BIR MARTA ishga tushiring.
+# Oldin Settings → Secrets → Actions ga NARX_KEYSTORE_PASSWORD va NARX_KEY_ALIAS ni qoʻshing.
+# Natija: Artifacts → "imzo-kaliti" (upload.jks va base64 matni). Faylni xavfsiz joyda saqlang!
+name: Imzo kalitini yaratish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  keystore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Kalit yaratish
+        env:
+          PASS: ${{ secrets.NARX_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.NARX_KEY_ALIAS }}
+        run: |
+          if [ -z "$PASS" ] || [ -z "$ALIAS" ]; then echo "NARX_KEYSTORE_PASSWORD va NARX_KEY_ALIAS secretlarini qoʻshing"; exit 1; fi
+          mkdir out
+          keytool -genkeypair -v -keystore out/upload.jks -storetype JKS -alias "$ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" -dname "CN=NarxRadar, OU=Mobile, O=NarxRadar, L=Tashkent, C=UZ"
+          base64 -w0 out/upload.jks > out/upload.jks.base64.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: imzo-kaliti
+          path: out/
+          retention-days: 1

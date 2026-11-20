@@ -1,0 +1,7 @@
+node_modules/
+.netlify/
+.env
+*.jks
+*.keystore
+upload.jks.base64.txt
+.DS_Store

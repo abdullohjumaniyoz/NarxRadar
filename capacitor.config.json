@@ -1,0 +1,11 @@
+{
+  "appId": "uz.narxradar.app",
+  "appName": "NarxRadar",
+  "webDir": "docs",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never" },
+  "plugins": {
+    "SystemBars": { "insetsHandling": "css" },
+    "LocalNotifications": { "iconColor": "#0a7c76" }
+  }
+}
