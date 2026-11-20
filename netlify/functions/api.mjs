@@ -7,7 +7,10 @@
 //   GEMINI_API_KEY        — Google Gemini kaliti (bepul tarif, aistudio.google.com). Claude kaliti boʻlmasa ishlatiladi
 //   CLAUDE_MODEL          — standart: claude-haiku-5-5
 //   GEMINI_MODEL          — standart: gemini-3.8-flash
+//   AI_PROVIDER           — majburan tanlash: "gemini" yoki "claude" (ixtiyoriy)
 //   Ikkalasi ham boʻlmasa AI oʻchiq, baza baribir ishlaydi
+//   Eslatma: Netlify "AI Gateway" ANTHROPIC_API_KEY/GEMINI_API_KEY ni oʻzi qoʻyishi mumkin (ANTHROPIC_BASE_URL bilan).
+//   Bunday holatda soʻrovlar Netlify kreditlari hisobidan ketadi; oʻzingiz qoʻygan kalit doim ustun turadi.
 //   DAILY_AI_LIMIT        — kunlik AI soʻrovlari chegarasi, standart 800
 //   DAILY_REPORTS_PER_IP  — bitta IP dan kunlik xabar chegarasi, standart 60
 
@@ -18,7 +21,17 @@ const KEY = process.env.ANTHROPIC_API_KEY || "";
 const MODEL = process.env.CLAUDE_MODEL || "claude-haiku-5-5";
 const GEMINI_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-const PROVIDER = KEY ? "claude" : GEMINI_KEY ? "gemini" : null;
+const AI_PROVIDER = String(process.env.AI_PROVIDER || "").toLowerCase();
+const ANTHROPIC_BASE = String(process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/+$/, "");
+const GEMINI_BASE = String(process.env.GOOGLE_GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/+$/, "");
+const CLAUDE_OWN = !!KEY && !process.env.ANTHROPIC_BASE_URL;          /* oʻzingiz qoʻygan Claude kaliti */
+const GEMINI_OWN = !!GEMINI_KEY && !process.env.GOOGLE_GEMINI_BASE_URL; /* oʻzingiz qoʻygan Gemini kaliti */
+const PROVIDER =
+  AI_PROVIDER === "claude" && KEY ? "claude" :
+  AI_PROVIDER === "gemini" && GEMINI_KEY ? "gemini" :
+  CLAUDE_OWN ? "claude" : GEMINI_OWN ? "gemini" :
+  KEY ? "claude" : GEMINI_KEY ? "gemini" : null;
+const VIA = PROVIDER === "claude" ? (CLAUDE_OWN ? "direct" : "netlify-gateway") : PROVIDER === "gemini" ? (GEMINI_OWN ? "direct" : "netlify-gateway") : null;
 const DAILY_AI = Number(process.env.DAILY_AI_LIMIT || 800);
 const DAILY_PER_IP = Number(process.env.DAILY_REPORTS_PER_IP || 60);
 
@@ -45,7 +58,7 @@ async function bump(key, limit) {
 
 /* ---------- Claude ---------- */
 async function claude(content, maxTokens = 700) {
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+  const r = await fetch(`${ANTHROPIC_BASE}/v1/messages`, {
     method: "POST",
     headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, messages: [{ role: "user", content }] })
@@ -64,7 +77,7 @@ async function gemini(content, maxTokens = 700) {
     contents: [{ role: "user", parts }],
     generationConfig: { temperature: 0.2, maxOutputTokens: Math.max(2048, maxTokens * 3), ...(thinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}) }
   });
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
+  const url = `${GEMINI_BASE}/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
   const call = thinking => fetch(url, { method: "POST", headers: { "x-goog-api-key": GEMINI_KEY, "content-type": "application/json" }, body: body(thinking) });
   let r = await call(true);
   if (r.status === 400) r = await call(false); /* model "thinkingLevel"ni qoʻllamasa, usiz qayta urinadi */
@@ -165,7 +178,7 @@ export default async (req, context) => {
   const ip = (context && context.ip) || req.headers.get("x-nf-client-connection-ip") || "0";
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   try {
-    if (route === "health") return json({ ok: true, ai: !!PROVIDER, provider: PROVIDER, db: true });
+    if (route === "health") return json({ ok: true, ai: !!PROVIDER, provider: PROVIDER, via: VIA, db: true });
     if (route === "reports" && req.method === "GET") {
       const items = url.searchParams.get("rebuild") === "1" ? await rebuild() : await listReports();
       return json({ items });
