@@ -10,7 +10,7 @@ jobs:
   keystore:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
@@ -24,7 +24,7 @@ jobs:
           keytool -genkeypair -v -keystore out/upload.jks -storetype JKS -alias "$ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass "$PASS" -keypass "$PASS" -dname "CN=NarxRadar, OU=Mobile, O=NarxRadar, L=Tashkent, C=UZ"
           base64 -w0 out/upload.jks > out/upload.jks.base64.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: imzo-kaliti
           path: out/
