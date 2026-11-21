@@ -102,11 +102,14 @@ const RETRY_NEXT = new Set([403, 404, 408, 429, 500, 502, 503, 504]);
 async function gemini(content, maxTokens, json, models, deadline, trace) {
   const parts = content.map(c => c.type === "image" ? { inline_data: { mime_type: c.source.media_type, data: c.source.data } } : { text: c.text });
   let last = err("no model", 500);
-  for (const model of models) {
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
     let think = THINK(model);
+    /* Oxirgisidan boshqa modelga koʻpi bilan 15 s: band yoki sekin boʻlsa, keyingisiga oʻtiladi */
+    const cap = i < models.length - 1 ? Math.min(deadline, Date.now() + 15000) : deadline;
     for (let attempt = 0; attempt < 2; attempt++) {
       let r;
-      try { r = await geminiOnce(model, parts, maxTokens, json, think, deadline); }
+      try { r = await geminiOnce(model, parts, maxTokens, json, think, cap); }
       catch (e) { last = e; if (trace) trace.push(`${model}: ${e.message}`); break; }
       if (r.ok) {
         const j = await r.json();
@@ -127,12 +130,12 @@ async function gemini(content, maxTokens, json, models, deadline, trace) {
   }
   throw last;
 }
-async function aiCall(content, { maxTokens = 700, json = false, image = false, deadline, edge = false, trace } = {}) {
+/* Rasm ham, matn ham avval eng tez model bilan oʻqiladi (odatda 2–4 s). Kuchliroq 3.8 Flash
+   faqat zaxira: tez model yorliqni topa olmasa yoki band boʻlsa ishlatiladi. */
+async function aiCall(content, { maxTokens = 700, json = false, image = false, deadline, edge = false, trace, models: only } = {}) {
   if (PROVIDER === "claude") return { text: await claude(content, maxTokens, deadline), model: MODEL };
   if (PROVIDER !== "gemini") throw err("no_ai", 503);
-  const models = image
-    ? (edge ? chain(["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]) : chain(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash"]))
-    : chain(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash"]);
+  const models = only || chain(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash"]);
   return gemini(content, maxTokens, json, models, deadline, trace);
 }
 
@@ -146,9 +149,15 @@ async function runTask(route, body, opts) {
     const { image, mime } = body || {};
     if (typeof image !== "string" || image.length < 100 || image.length > 6_000_000) return { error: "invalid" };
     const mt = MIME_OK.includes(mime) ? mime : "image/jpeg";
-    const r = await aiCall([{ type: "image", source: { type: "base64", media_type: mt, data: image } }, { type: "text", text: READ_PROMPT() }], { ...opts, maxTokens: 800, json: true, image: true });
-    const j = parseJSON(r.text) || { is_price_tag: false, items: [] };
-    j._m = r.model; j._ms = Date.now() - t0;
+    const content = [{ type: "image", source: { type: "base64", media_type: mt, data: image } }, { type: "text", text: READ_PROMPT() }];
+    const r = await aiCall(content, { ...opts, maxTokens: 800, json: true, image: true });
+    let j = parseJSON(r.text) || { is_price_tag: false, items: [] }, model = r.model;
+    const found = x => x && x.is_price_tag && Array.isArray(x.items) && x.items.length && x.items[0].price_uzs;
+    /* Tez model narxni topa olmasa, vaqt yetsa kuchliroq model bilan bir marta qayta oʻqiladi */
+    if (!found(j) && PROVIDER === "gemini" && model !== "gemini-3.8-flash" && opts.deadline - Date.now() > 20000) {
+      try { const r2 = await aiCall(content, { ...opts, maxTokens: 800, json: true, image: true, models: ["gemini-3.8-flash"] }); const j2 = parseJSON(r2.text); if (found(j2)) { j = j2; model = r2.model; } } catch (e) { }
+    }
+    j._m = model; j._ms = Date.now() - t0;
     return j;
   }
   if (route === "parse") {
@@ -200,7 +209,7 @@ const DAILY_AI_IP = Number(ENV("DAILY_AI_PER_IP") || 80);
 const DAILY_PER_IP = Number(ENV("DAILY_REPORTS_PER_IP") || 60);
 const REGIONS = new Set(["TOSS", "TOS", "AND", "BUX", "FAR", "JIZ", "NAM", "NAV", "QAS", "QQR", "SAM", "SIR", "SUR", "XOR"]);
 const MAX_AGG = 2000;
-const VERSION = "2.2.0";
+const VERSION = "2.2.2";
 
 const store = () => getStore("narxradar");
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, x-cap-key, x-admin-key", "access-control-max-age": "86400" };
