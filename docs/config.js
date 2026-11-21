@@ -1,7 +1,4 @@
-/* NarxRadar sozlamasi.
-   Telefon ilovasi (Android/iOS) serverga toʻliq manzil orqali ulanadi.
-   Netlify'ga joylagandan keyin quyidagi narxradar soʻzini oʻz sayt nomingizga almashtiring,
-   masalan: "https://narxradar.netlify.app/api".
+/* NarxRadar sozlamasi: telefon ilovasi (Android/iOS) serverga toʻliq manzil orqali ulanadi.
    Saytning oʻzida (brauzerda) "/api" avtomatik ishlatiladi. */
 (function () {
   var C = window.Capacitor;

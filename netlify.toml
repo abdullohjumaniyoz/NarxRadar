@@ -17,3 +17,9 @@
   [headers.values]
     Permissions-Policy = "geolocation=(self), camera=(self)"
     X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/ref.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "no-cache"
