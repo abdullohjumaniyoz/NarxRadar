@@ -44,7 +44,8 @@ const manual = (process.env.NARX_DATE || "").split(",").map(s => s.trim()).filte
 if (manual.length) { for (const d of manual) console.log(d, await tryDate(d)); }
 else {
   // 1) eng yangi hafta: bugundan orqaga 14 kun (sayt odatda chorshanba kuzatuvini keyingi haftada eʼlon qiladi)
-  for (let k = 0; k <= 14; k++) { const d = iso(Date.now() - k * DAY); const st = await tryDate(d); if (st === "bor") break; }
+  let fails = 0;
+  for (let k = 0; k <= 16 && fails < 2; k++) { const t = Date.now() - k * DAY, wd = new Date(t).getUTCDay(); if (wd !== 2 && wd !== 3) continue; const st = await tryDate(iso(t)); if (st === "bor") break; if (st === "xato") fails++; }
   // 2) haftalik va yillik oʻzgarish uchun: oldingi hafta va bir yil oldingi hafta
   const latest = [...have].sort().at(-1);
   if (latest) {

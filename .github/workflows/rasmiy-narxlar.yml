@@ -3,9 +3,9 @@
 # (qiymati Netlify'dagi ADMIN_KEY bilan bir xil). Bu ish Netlify kreditini sarflamaydi: maʼlumot serverga yoziladi.
 name: Rasmiy narxlar
 
+# Eslatma: narx.stat.uz GitHub serverlariga (AQSh) ochilmaydi, shuning uchun jadval oʻchirilgan.
+# Asosiy yoʻl — egasining telefoni (ilova → Profil → ishlab chiquvchi rejimi). Bu ish faqat qoʻlda ishga tushiriladi.
 on:
-  schedule:
-    - cron: "20 4 * * 2,4,6"   # seshanba, payshanba, shanba — Toshkent vaqti bilan 09:20
   workflow_dispatch:
     inputs:
       date:

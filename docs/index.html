@@ -435,7 +435,7 @@ const REF0 = {"v":2,"week":"2026-11-11","prev":"2026-11-04","yearAgo":"2025-11-1
 let REF = REF0, P = {};
 function indexRef() { P = Object.fromEntries(REF.products.map(p => [p.c, p])); }
 indexRef();
-const APP_VERSION = "2.2.0";
+const APP_VERSION = "2.2.1";
 
 /* k: "r" — narx.stat.uz rasmiy oʻrtacha; "s" — narxtahlil.uz supermarket narxi; "x" — rasmiy manba yoʻq, faqat xaridorlar xabarlari */
 const KIND = { r: "Rasmiy", s: "Supermarket", x: "Xalq narxi" };
@@ -1363,6 +1363,10 @@ function adminHTML(all) {
       <li><span class="ic">5</span><b>Bozor tahlili</b><span class="who">Savdo tarmoqlari, ishlab chiqaruvchilar, banklar</span><span style="grid-column:2">Hududlar va kanallar kesimida narx va raqobatchilar narxi.</span></li>
     </ul>
     <p class="sub">Rasmiy maʼlumot: ${dfull(REF.week)} kuzatuvi. ${CAP.refFromDb ? "Serverdan yangilangan." : `Ilovaga ${dfull(REF.fetched)} da yuklangan.`} Supermarketlar: ${esc(REF.smNote)}.</p>
+    <h3>Rasmiy narxlar (narx.stat.uz)</h3>
+    <p class="sub" style="margin:0">${offSyncLine()}</p>
+    ${NATIVE ? `<label class="f" for="m-admkey">Parol (Netlify'dagi ADMIN_KEY)<input class="in" id="m-admkey" type="password" autocomplete="off" placeholder="${LS.get("nr-admkey", "") ? "saqlangan — oʻzgartirish uchun qayta yozing" : "kamida 12 belgi"}"></label><button class="btn2" id="m-offsync">Rasmiy narxlarni hozir yangilash</button>${LS.get("nr-admkey", "") ? `<button class="linkbtn" id="m-admkey-del">Parolni telefondan oʻchirish</button>` : ""}` : `<p class="note">Avtomatik yangilash telefon ilovasida ishlaydi (narx.stat.uz chet eldan ochilmaydi). Kompyuterdan qoʻlda: <a href="admin.html">admin.html</a>.</p>`}
+    <div id="m-offout"></div>
     <button class="btn2" id="m-adm-off">Ishlab chiquvchi rejimini oʻchirish</button>
   </section>`;
 }
@@ -1370,6 +1374,15 @@ function wireAdmin() {
   const csv = $("#m-csv"); if (csv) { csv.style.display = CAP.dl && !NATIVE ? "" : "none"; csv.onclick = async () => { try { await CAP.dl.save({ filename: `narxradar-${new Date().toISOString().slice(0, 10)}.csv`, data: toCSV() }); } catch (e) { toast("Yuklab olish bekor qilindi."); } }; }
   const cp = $("#m-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(toCSV()); toast("CSV nusxalandi."); } catch (e) { toast("Nusxalash bloklandi."); } };
   const off = $("#m-adm-off"); if (off) off.onclick = () => { LS.set("nr-admin", 0); renderData(); };
+  const del = $("#m-admkey-del"); if (del) del.onclick = () => { LS.set("nr-admkey", ""); toast("Parol telefondan oʻchirildi."); renderData(); };
+  const sy = $("#m-offsync"); if (sy) sy.onclick = async () => {
+    const inp = $("#m-admkey"), v = inp ? inp.value.trim() : "", out = $("#m-offout");
+    if (v) { if (v.length < 12) { out.innerHTML = `<p class="note warn">Parol kamida 12 belgi boʻlishi kerak.</p>`; return; } LS.set("nr-admkey", v); inp.value = ""; }
+    if (LS.get("nr-admkey", "").length < 12) { out.innerHTML = `<p class="note warn">Avval parolni kiriting.</p>`; return; }
+    sy.disabled = true; out.innerHTML = statusHTML("narx.stat.uz tekshirilmoqda…", "Bir necha daqiqa olishi mumkin");
+    const r = await officialSync(true); sy.disabled = false;
+    out.innerHTML = r && r.key ? `<p class="note warn">Server parolni qabul qilmadi. Netlify'dagi ADMIN_KEY bilan bir xil yozing.</p>` : r && r.ok ? (r.log.length ? `<div class="ai"><b>Yuklandi</b>${r.log.join(", ")} haftalari serverga yozildi.${r.check ? " Tekshiring: " + esc(r.check) : ""}</div>` : r.net >= 2 ? `<p class="note warn">narx.stat.uz ga ulanib boʻlmadi. Internetni tekshiring.</p>` : `<p class="note">Yangi hafta hali eʼlon qilinmagan. Serverdagi oxirgi hafta: ${r.latest ? dfull(r.latest) : "yoʻq"}.</p>`) : `<p class="note warn">Yangilab boʻlmadi. Birozdan soʻng qayta urinib koʻring.</p>`;
+  };
 }
 function toCSV() {
   const rows = [["vaqt", "hafta", "kod", "mahsulot", "manba_turi", "yozilgan_nom", "narx", "qadoq", "birlik_narxi", "birlik", "eski_narx", "manba", "ai_ishonchi", "viloyat", "joy", "joy_turi", "joylashuv_usuli", "kenglik", "uzunlik", "baho", "farq", "chegirma_bahosi", "qabul", "ogirlik"]];
@@ -1732,6 +1745,61 @@ async function loadRefs() {
   indexRef(); SYN_N = null; allReset(); if (!SHEET_LOCK) renderAll();
 }
 loadRefs();
+
+/* ============ Rasmiy narxlarni telefon orqali yangilash ============
+   narx.stat.uz chet eldagi serverlarga (GitHub, Netlify) ochilmaydi, Oʻzbekistondagi telefonga esa ochiladi.
+   Egasining telefoni (ishlab chiquvchi rejimi + parol) ochiq maʼlumot faylini yuklab olib, NarxRadar serveriga yozadi.
+   Boshqa foydalanuvchilar uchun hech narsa oʻzgarmaydi: ular tayyor maʼlumotni serverdan oladi. */
+const OFF_SRC = "https://narx.stat.uz/api/export/weekly.csv?date=";
+const isoD = t => new Date(t).toISOString().slice(0, 10);
+function offSyncLine() {
+  const s = LS.get("nr-offsync", null);
+  const wk = CAP.refFromDb ? `Ilovadagi rasmiy narxlar: ${dfull(REF.week)} kuzatuvi.` : `Ilovadagi rasmiy narxlar: ${dfull(REF.week)} (ilova ichidagi maʼlumot).`;
+  if (!s) return wk + " Telefon orqali yangilash hali ishlatilmagan.";
+  return wk + ` Oxirgi tekshiruv: ${ago(new Date(s.at).toISOString())}${s.got && s.got.length ? ", yuklangan: " + s.got.join(", ") : ""}${s.err === "net" ? " (narx.stat.uz ochilmadi)" : s.err === "key" ? " (parol notoʻgʻri)" : ""}.`;
+}
+async function nativeText(url) {
+  if (!NATIVE || !CAPN || typeof CAPN.nativePromise !== "function") throw new Error("native");
+  const r = await CAPN.nativePromise("CapacitorHttp", "request", { url, method: "GET", headers: { accept: "text/csv" }, responseType: "text", connectTimeout: 20000, readTimeout: 90000 });
+  return { status: r && r.status, text: r && typeof r.data === "string" ? r.data : "" };
+}
+async function officialSync() {
+  const key = LS.get("nr-admkey", "");
+  if (!NATIVE || key.length < 12 || officialSync.busy) return null;
+  officialSync.busy = true;
+  const got = []; let check = null, netFail = 0;
+  try {
+    const sum = await api("/official", undefined, 15000).catch(() => null);
+    const have = new Set((sum && sum.dates) || []), latest0 = [...have].sort().at(-1) || null, DAY = 864e5, now = Date.now();
+    const tryDate = async d => {
+      if (have.has(d)) return "bor";
+      let r; try { r = await nativeText(OFF_SRC + d); } catch (e) { netFail++; return "xato"; }
+      const text = String(r.text || "").replace(/^\uFEFF/, ""), lines = text.split(/\r?\n/, 3);
+      if (r.status !== 200 || !/^sana;/.test(lines[0] || "") || (lines[1] || "").split(";")[0] !== d) return "yoq";
+      const up = await fetch(`${API}/official?date=${d}`, { method: "POST", headers: { "content-type": "text/csv; charset=utf-8", "x-admin-key": key }, body: text });
+      const j = await up.json().catch(() => null);
+      if (up.status === 403) throw Object.assign(new Error("key"), { code: "key" });
+      if (!up.ok || !j || !j.ok) return "server";
+      have.add(d); got.push(d); if (j.check && !check) check = j.check.join("; "); return "ok";
+    };
+    /* kuzatuv kunlari: chorshanba (baʼzan seshanba). Oxirgi 16 kun, yangisidan eskisiga */
+    for (let k = 0; k <= 16 && netFail < 2; k++) { const t = now - k * DAY, wd = new Date(t).getUTCDay(), d = isoD(t); if (latest0 && d <= latest0) break; if (wd === 2 || wd === 3) await tryDate(d); }
+    const latest = [...have].sort().at(-1) || null;
+    if (latest && netFail < 2) {
+      const t = Date.parse(latest), near = (x, tol) => [...have].some(d => Math.abs(Date.parse(d) - x) <= tol * DAY);
+      if (!near(t - 7 * DAY, 3)) for (const k of [7, 8, 6]) if ((await tryDate(isoD(t - k * DAY))) === "ok") break;
+      if (!near(t - 364 * DAY, 10)) for (const k of [364, 365, 363, 371, 357]) if ((await tryDate(isoD(t - k * DAY))) === "ok") break;
+    }
+    LS.set("nr-offsync", { at: Date.now(), got, err: netFail >= 2 ? "net" : null });
+    if (got.length) { toast(`Rasmiy narxlar yangilandi: ${got.join(", ")}`); loadRefs(); }
+    return { ok: true, log: got, latest, net: netFail, check };
+  } catch (e) {
+    LS.set("nr-offsync", { at: Date.now(), got, err: e && e.code === "key" ? "key" : "other" });
+    return { ok: false, key: !!(e && e.code === "key") };
+  } finally { officialSync.busy = false; }
+}
+/* Egasining telefoni: ilova ochilganda, 12 soatda bir marta, yangi hafta bormi deb tekshiradi */
+if (NATIVE && LS.get("nr-admkey", "").length >= 12) setTimeout(() => { const s = LS.get("nr-offsync", null); if (!s || Date.now() - s.at > 12 * 3600e3) officialSync(); }, 8000);
 initServer();
 
 /* ============ Telefon ilovasi: orqaga tugmasi va avtomatik yangilanish ============ */
