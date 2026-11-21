@@ -2,10 +2,28 @@
   "appId": "uz.narxradar.app",
   "appName": "NarxRadar",
   "webDir": "docs",
-  "android": { "allowMixedContent": false },
-  "ios": { "contentInset": "never" },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "never"
+  },
   "plugins": {
-    "SystemBars": { "insetsHandling": "css" },
-    "LocalNotifications": { "iconColor": "#0a7c76" }
+    "SystemBars": {
+      "insetsHandling": "css"
+    },
+    "LocalNotifications": {
+      "iconColor": "#0a7c76"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "statsUrl": "",
+      "updateUrl": "",
+      "channelUrl": "",
+      "appReadyTimeout": 15000,
+      "resetWhenUpdate": true,
+      "autoDeleteFailed": true,
+      "autoDeletePrevious": true
+    }
   }
 }

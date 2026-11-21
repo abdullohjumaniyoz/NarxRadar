@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>NarxRadar — rasmiy narxlarni yuklash</title>
+<style>
+  :root{--bg:#f3f6f7;--s:#fff;--ink:#0d1b21;--ink2:#5b6c73;--line:#e2e9eb;--b:#0b7a6e;--bs:#dcf3ee;--w:#fdefd6;--c:#d12d2d}
+  @media (prefers-color-scheme: dark){:root{--bg:#081214;--s:#101d20;--ink:#e6f0ef;--ink2:#a0b3b4;--line:#20343a;--b:#2fc7ae;--bs:#123a35;--w:#3a2a10;--c:#ff7c72}}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  main{max-width:640px;margin:0 auto;padding:28px 18px 60px;display:flex;flex-direction:column;gap:16px}
+  h1{font-size:24px;margin:0} h2{font-size:17px;margin:0 0 8px}
+  .card{background:var(--s);border:1px solid var(--line);border-radius:18px;padding:16px}
+  p{margin:0;color:var(--ink2)} ol{margin:6px 0 0;padding-left:20px;color:var(--ink2)} li{margin:4px 0}
+  label{display:block;font-weight:700;margin:10px 0 6px} input[type=password],input[type=file]{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}
+  button{margin-top:12px;width:100%;padding:13px;border:0;border-radius:12px;background:var(--b);color:#fff;font:inherit;font-weight:800;cursor:pointer} button[disabled]{opacity:.5}
+  .log{white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border-radius:12px;padding:12px;margin-top:12px;min-height:44px}
+  .ok{color:var(--b)} .no{color:var(--c)} a{color:var(--b)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Rasmiy narxlarni yuklash</h1>
+  <p>Bu sahifa faqat NarxRadar egasi uchun. Odatda narxlar har hafta avtomatik yangilanadi. Avtomatik yangilanish ishlamasa, faylni shu yerdan qoʻlda yuklang.</p>
+  <section class="card">
+    <h2>Hozirgi holat</h2>
+    <div class="log" id="st">Yuklanmoqda…</div>
+  </section>
+  <section class="card">
+    <h2>Qoʻlda yuklash</h2>
+    <ol>
+      <li><a href="https://narx.stat.uz/data" target="_blank" rel="noopener">narx.stat.uz/data</a> sahifasini oching.</li>
+      <li>“Yuklash haftasi” dan haftani tanlang va “Toʻliq narx toʻplami” → <b>Yuklab olish</b> ni bosing.</li>
+      <li>Birinchi marta: oxirgi hafta, undan oldingi hafta va bir yil oldingi hafta (masalan, 2025-yil 12-noyabr) fayllarini yuklab oling. Keyingi safar faqat yangi haftani.</li>
+      <li>Fayllarni shu yerga tanlang (bir nechta boʻlishi mumkin) va yuklang.</li>
+    </ol>
+    <label for="k">Parol (Netlify'dagi ADMIN_KEY)</label>
+    <input type="password" id="k" autocomplete="current-password">
+    <label for="f">CSV fayllar</label>
+    <input type="file" id="f" accept=".csv,text/csv" multiple>
+    <button id="go">Yuklash</button>
+    <div class="log" id="out"></div>
+  </section>
+</main>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const K = "nr-admin-key";
+try { $("#k").value = localStorage.getItem(K) || ""; } catch (e) { }
+async function status() {
+  try {
+    const s = await (await fetch("/api/official", { cache: "no-store" })).json();
+    $("#st").textContent = s && s.week ? `Oxirgi hafta: ${s.week}\nOldingi hafta: ${s.prev || "—"}\nBir yil oldin: ${s.yearAgo || "— (yillik oʻzgarish chiqmaydi)"}\nSaqlangan haftalar: ${(s.dates || []).length}\nYangilangan: ${s.updated || "—"}` : "Serverda hali rasmiy narx yoʻq: ilova oʻz ichidagi maʼlumotdan foydalanadi.";
+  } catch (e) { $("#st").textContent = "Serverga ulanib boʻlmadi."; }
+}
+$("#go").onclick = async () => {
+  const key = $("#k").value.trim(), files = [...$("#f").files], out = $("#out");
+  if (key.length < 12) { out.innerHTML = '<span class="no">Parolni kiriting (kamida 12 belgi).</span>'; return; }
+  if (!files.length) { out.innerHTML = '<span class="no">CSV faylni tanlang.</span>'; return; }
+  try { localStorage.setItem(K, key); } catch (e) { }
+  $("#go").disabled = true; out.textContent = "";
+  for (const f of files) {
+    const text = await f.text();
+    try {
+      const r = await fetch("/api/official", { method: "POST", headers: { "content-type": "text/csv; charset=utf-8", "x-admin-key": key }, body: text });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 403) out.innerHTML += `<span class="no">${f.name}: parol notoʻgʻri.</span>\n`;
+      else if (!r.ok || !j.ok) out.innerHTML += `<span class="no">${f.name}: yuklanmadi (${j.error || r.status}).</span>\n`;
+      else out.innerHTML += `<span class="ok">${f.name}: ${j.date} haftasi, ${j.products} ta mahsulot ✓</span>\n` + (j.check && j.check.length ? `Respublika narxi (narx.stat.uz/prices bilan solishtiring): ${j.check.join("; ")}\n` : "");
+    } catch (e) { out.innerHTML += `<span class="no">${f.name}: serverga ulanib boʻlmadi.</span>\n`; }
+  }
+  $("#go").disabled = false; status();
+};
+status();
+</script>
+</body>
+</html>

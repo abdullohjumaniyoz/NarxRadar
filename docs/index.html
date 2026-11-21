@@ -13,11 +13,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="NarxRadar">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/onest-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* NarxRadar 2.0 — zamonaviy mobil interfeys: shishasimon sarlavha, gradientli asosiy karta, markazda skaner tugmasi. */
+/* Shriftlar ilova ichida: internet boʻlmasa ham bir xil koʻrinadi */
+@font-face{font-family:"Onest V";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/onest-latin-wght-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Onest V";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/onest-latin-ext-wght-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Onest V";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/onest-cyrillic-wght-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:"Unbounded V";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/unbounded-latin-wght-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Unbounded V";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/unbounded-cyrillic-wght-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+/* NarxRadar 2.1 — zamonaviy mobil interfeys: shishasimon sarlavha, gradientli asosiy karta, markazda skaner tugmasi. */
 :root{
   --bg:#f3f6f7; --surface:#ffffff; --surface2:#eef3f4; --surface3:#e4ecee; --ink:#0d1b21; --ink2:#5b6c73; --ink3:#8a9aa0; --line:#e2e9eb;
   --brand:#0b7a6e; --brand2:#0f9e8a; --brand-ink:#ffffff; --brand-soft:#dcf3ee; --brand-deep:#0a4d4a;
@@ -25,8 +29,8 @@
   --hero-disc:linear-gradient(140deg,#ff8a3d 0%,#f05a3c 48%,#c2364a 100%);
   --hero-ix:linear-gradient(140deg,#4f7cff 0%,#3a55d8 45%,#2b3a9c 100%);
   --good:#14924f; --good-soft:#dcf5e7; --warn:#c06a00; --warn-soft:#fdefd6; --crit:#d12d2d; --crit-soft:#fde2e0; --cheap:#2363d6; --cheap-soft:#e0eafe; --new:#6d4ad8; --new-soft:#ece6ff; --mute:#6b7a80; --mute-soft:#edf1f2;
-  --display:"Unbounded","Onest",system-ui,sans-serif;
-  --body:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --display:"Unbounded V","Onest V",system-ui,sans-serif;
+  --body:"Onest V",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:22px; --r2:16px;
   --shadow:0 1px 2px rgba(13,27,33,.05),0 10px 30px -12px rgba(13,27,33,.14);
   --shadow2:0 18px 40px -16px rgba(11,122,110,.55);
@@ -342,6 +346,45 @@ table.tb .r{text-align:right}
   .sheet header{background:color-mix(in srgb,var(--bg) 85%,transparent)}
 }
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* 2.1: pastki menyu orqasida silliq fon, skaner animatsiyasi, holat qatori, yangilanish banneri */
+.app::after{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(96px + var(--sab));background:linear-gradient(to bottom,transparent,var(--bg) 58%);pointer-events:none;z-index:14}
+.stack{display:flex;flex-direction:column;gap:14px}
+.scanbox{position:relative;border-radius:24px;overflow:hidden;background:#0b1416;box-shadow:var(--shadow);flex-shrink:0}
+.scanbox img{display:block;width:100%;max-height:44vh;object-fit:cover}
+.scanbox::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,20,22,.0),rgba(11,20,22,.18));pointer-events:none}
+.scanbox::after{content:"";position:absolute;left:0;right:0;top:-30%;height:30%;background:linear-gradient(to bottom,rgba(47,199,174,0),rgba(47,199,174,.28) 70%,rgba(140,255,233,.95) 98%,rgba(140,255,233,0));animation:scan 1.7s cubic-bezier(.45,.05,.55,.95) infinite;pointer-events:none}
+.scanbox.done::after{display:none}
+@keyframes scan{to{top:100%}}
+.photo.sm{max-height:150px;object-fit:cover;width:100%;border-radius:20px}
+.status{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;font-weight:700;box-shadow:var(--shadow)}
+.status small{display:block;font-weight:500;color:var(--ink2);font-size:13px;margin-top:2px}
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--brand-soft);border-top-color:var(--brand);animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dsc{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.dsc h3 .muted{font-weight:600}
+details.more{border-top:1px solid var(--line);padding-top:10px}
+details.more summary{cursor:pointer;font-weight:800;color:var(--brand);list-style:none;display:flex;align-items:center;gap:6px;padding:4px 0}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"";width:8px;height:8px;border-right:2.4px solid currentColor;border-bottom:2.4px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .2s;margin-left:2px}
+details.more[open] summary::after{transform:rotate(-135deg) translate(-1px,-1px)}
+details.more .checks,details.more .pipe{margin-top:10px}
+.upd{display:flex;gap:12px;align-items:center;background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 22%,transparent);border-radius:20px;padding:12px 12px 12px 14px}
+.upd>svg{width:24px;height:24px;color:var(--brand);flex:none}
+.upd .grow{flex:1;min-width:0}
+.upd b{display:block;font-size:14.5px}
+.upd span{font-size:12.5px;color:var(--ink2)}
+.upd .btn{width:auto;padding:10px 14px;font-size:14px;flex:none}
+.addp{font-size:12.5px;font-weight:800;color:var(--brand);background:var(--brand-soft);padding:5px 10px;border-radius:999px;white-space:nowrap}
+.kvbtn{width:100%;border:0;background:none;padding:10px 0;text-align:left;font:inherit;color:inherit}
+.card.adm{border-style:dashed}
+.note.warn{color:var(--ink)}
+.confirm{display:flex;flex-direction:column;gap:12px}
+.ci{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:12px}
+.ci .in{font-size:16px}
+.warnline{margin:0;font-size:13px;font-weight:700;color:var(--warn);background:var(--warn-soft);border-radius:12px;padding:9px 12px}
+.parse span.no{white-space:normal}
+@media (prefers-reduced-motion: reduce){ .scanbox::after,.spin{animation:none} .view>*{animation:none} }
 </style>
 </head>
 <body>
@@ -352,14 +395,14 @@ table.tb .r{text-align:right}
       <b>NarxRadar</b>
     </button>
     <button class="locchip" id="locchip" aria-label="Joylashuv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span id="loctext">Joylashuv…</span></button>
-    <button class="iconbtn" id="gear" aria-label="Maʼlumot va sozlamalar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+    <button class="iconbtn" id="gear" aria-label="Profil va sozlamalar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
   </header>
 
   <main class="view" id="v-asosiy" aria-label="Asosiy"></main>
   <main class="view" id="v-narxlar" aria-label="Narxlar" hidden></main>
   <main class="view" id="v-chegirma" aria-label="Chegirma" hidden></main>
   <main class="view" id="v-indeks" aria-label="Indeks" hidden></main>
-  <main class="view" id="v-malumot" aria-label="Maʼlumot" hidden></main>
+  <main class="view" id="v-malumot" aria-label="Profil" hidden></main>
 
   <nav class="tabbar" aria-label="Boʻlimlar">
     <button data-tab="asosiy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Asosiy</button>
@@ -392,7 +435,7 @@ const REF0 = {"v":2,"week":"2026-11-11","prev":"2026-11-04","yearAgo":"2025-11-1
 let REF = REF0, P = {};
 function indexRef() { P = Object.fromEntries(REF.products.map(p => [p.c, p])); }
 indexRef();
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.2.0";
 
 /* k: "r" — narx.stat.uz rasmiy oʻrtacha; "s" — narxtahlil.uz supermarket narxi; "x" — rasmiy manba yoʻq, faqat xaridorlar xabarlari */
 const KIND = { r: "Rasmiy", s: "Supermarket", x: "Xalq narxi" };
@@ -512,6 +555,13 @@ const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSO
 const CAPN = window.Capacitor;
 const NATIVE = !!(CAPN && typeof CAPN.isNativePlatform === "function" && CAPN.isNativePlatform());
 const NP = name => (NATIVE && CAPN.Plugins && CAPN.Plugins[name]) || null;
+/* Yangilanish xavfsizligi: yangi versiya muvaffaqiyatli ochilganini telefonga darhol bildiramiz.
+   Aks holda telefon 15 soniyadan keyin avtomatik ravishda oldingi ishlaydigan versiyaga qaytadi. */
+try { const U0 = NP("CapacitorUpdater"); if (U0) U0.notifyAppReady(); } catch (e) { }
+/* Telefon uchun tasodifiy kod: telefondan chiqmaydi. Serverga faqat “kod + mahsulot + hafta” xeshi boradi,
+   shunda bir kishi bir haftada bitta mahsulotga bitta ovoz beradi, lekin uni boshqa xabarlari bilan bogʻlab boʻlmaydi. */
+const IID = (() => { let v = LS.get("nr-iid", ""); if (!/^[a-z0-9]{16}$/.test(v)) { const A = "abcdefghijklmnopqrstuvwxyz0123456789"; v = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => A[b % 36]).join(""); LS.set("nr-iid", v); } return v; })();
+function contrib(c, wk) { let h = 0x811c9dc5; for (const ch of `${IID}|${c}|${wk}`) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } return h.toString(36).padStart(7, "0"); }
 const uid8 = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 const unitTxt = u => u === "l" ? "litr" : u;
 const perU = c => `soʻm/${P[c] ? P[c].u : "kg"}`;
@@ -833,16 +883,21 @@ function crowd(c, r, days = 14, excl) {
   const since = Date.now() - days * 864e5;
   const xs = ALL().filter(x => x.c === c && accepted(x) && Date.parse(x.t) >= since && (!r || (x.loc && x.loc.r === r)) && x.id !== excl);
   if (!xs.length) return { n: 0 };
-  const v = xs.map(x => x.up), w = xs.map(x => x.qa.w || 1);
-  return { n: xs.length, med: wmedian(v, w), mad: mad(v), min: Math.min(...v), max: Math.max(...v) };
+  /* Bir xaridor (bir telefon, bir hafta) koʻp yuborsa ham, uning ovozi bitta: avval oʻz qiymatlarining oʻrtasi olinadi */
+  const by = new Map();
+  for (const x of xs) { const k = x.a || x.id; const g = by.get(k) || { v: [], w: 0 }; g.v.push(x.up); g.w = Math.max(g.w, x.qa.w || 1); by.set(k, g); }
+  const groups = [...by.values()], v = groups.map(g => median(g.v)), w = groups.map(g => g.w);
+  return { n: groups.length, reps: xs.length, med: wmedian(v, w), mad: mad(v), min: Math.min(...v), max: Math.max(...v) };
 }
 /* xalq narxi: avval shu hudud, yetmasa butun respublika (kamida 3 ta xabar) */
 function crowdRef(c, r, days = 30, excl) {
   const a = r ? crowd(c, r, days, excl) : { n: 0 };
-  if (a.n >= 3) return { ...a, lbl: `${RG[r].s} xaridorlari medianasi` };
+  if (a.n >= 3) return { ...a, lbl: `${RG[r].s} xaridorlari narxi` };
   const b = crowd(c, null, days, excl);
-  return b.n >= 3 ? { ...b, lbl: "xaridorlar medianasi" } : { n: b.n };
+  return b.n >= 3 ? { ...b, lbl: "xaridorlar narxi" } : { n: b.n };
 }
+/* Yorliqdagi raqam yoki qadoq xatosini ushlash: odatiy narxdan 2,2 marta yuqori yoki 0,45 marta past boʻlsa, ogohlantiramiz */
+function plausible(c, up, r) { const p = P[c], sm = smStats(c), b = refPrice(c, r) || (sm ? sm.med : null); if (!up) return null; if (!b) { if (p && p.lo && (up < p.lo || up > p.hi)) { const mid = Math.sqrt(p.lo * p.hi); return { k: up / mid, b: mid, hi: up > p.hi }; } return null; } const k = up / b; return k > 2.2 ? { k, b, hi: true } : k < .45 ? { k, b, hi: false } : null; }
 function regPrice(c, r) { const p = P[c]; return p && p.r && r && p.r[r] ? p.r[r] : null; }
 /* asosiy narx: rasmiy → supermarket medianasi → xalq medianasi */
 function refPrice(c, r) {
@@ -851,33 +906,41 @@ function refPrice(c, r) {
   if (p.k === "s") return p.p;
   const cr = crowdRef(c, r); return cr.n >= 3 ? cr.med : null;
 }
-function band(g, tol) { return g <= -.12 ? "arzon" : g <= .10 + tol ? "adolatli" : g <= .25 + tol ? "qimmat" : "juda"; }
+/* Adolatli oraliq: rasmiy kuzatuvda shu viloyat tumanlari narxi qanchalik tarqoq boʻlsa, oraliq shuncha keng (6–25%) */
+function spreadOf(p, r) { const lo = p.rl && r && p.rl[r], hi = p.rh && r && p.rh[r], b = r && p.r && p.r[r]; return lo && hi && b ? Math.min(.25, Math.max(.06, (hi - lo) / 2 / b)) : .10; }
+function band(g, tol, t = .10) { return g <= -Math.max(.12, t + .04) ? "arzon" : g <= t + tol ? "adolatli" : g <= t + .15 + tol ? "qimmat" : "juda"; }
 function priceVerdict(c, up, r, ty) {
   const p = P[c], reg = regPrice(c, r), sm = smStats(c);
   const tol = ty === "supermarket" ? .15 : ty === "dokon" ? .08 : 0;
   let lab, g, bench, benchLbl, z = null;
   const zs = (b, t) => [b * .88, b * (1.10 + t), b * (1.25 + t)];
   if (ty === "supermarket" && sm && sm.n >= 3) {
-    bench = sm.med; benchLbl = "supermarketlar medianasi"; g = up / bench - 1;
+    bench = sm.med; benchLbl = "supermarketlar oʻrtachasi"; g = up / bench - 1;
     lab = up > sm.max * 1.15 ? "juda" : up > sm.max * 1.03 ? "qimmat" : up < sm.min * .97 ? "arzon" : "adolatli";
     z = [sm.min * .97, sm.max * 1.03, sm.max * 1.15];
   } else if (p.k === "r") {
-    bench = reg || p.p; benchLbl = reg ? `${RG[r].s} oʻrtachasi` : "respublika oʻrtachasi"; g = up / bench - 1; lab = band(g, tol); z = zs(bench, tol);
+    bench = reg || p.p; benchLbl = reg ? `${RG[r].s} oʻrtachasi` : "Oʻzbekiston oʻrtachasi"; g = up / bench - 1;
+    const t = reg ? spreadOf(p, r) : .10; lab = band(g, tol, t); z = [bench * (1 - Math.max(.12, t + .04)), bench * (1 + t + tol), bench * (1 + t + .15 + tol)];
   } else if (p.k === "s" && sm) {
-    bench = sm.med; benchLbl = "supermarketlar medianasi"; g = up / bench - 1; lab = band(g, Math.max(tol, .05)); z = zs(bench, Math.max(tol, .05));
+    bench = sm.med; benchLbl = "supermarketlar oʻrtachasi"; g = up / bench - 1; lab = band(g, Math.max(tol, .05)); z = zs(bench, Math.max(tol, .05));
   } else {
     const cr = crowdRef(c, r);
     if (cr.n >= 3) { bench = cr.med; benchLbl = cr.lbl; g = up / bench - 1; lab = band(g, tol); z = zs(bench, tol); }
-    else { bench = null; benchLbl = "xalq narxi hali shakllanmagan"; g = 0; lab = "yangi"; }
+    else { bench = null; benchLbl = "xaridorlar narxi hali yoʻq"; g = 0; lab = "yangi"; }
   }
   return { lab, g, bench, benchLbl, reg, rep: p.p, sm, tol, z, cr: crowd(c, r, 14), crAll: crowd(c, null, 14) };
 }
 function quality(o) {
-  const why = []; let ok = true, w = o.src === "rasm" ? 1 : .6;
+  const why = []; let ok = true, w = o.src === "rasm" ? (o.cf === 2 ? .9 : 1) : .6;
   const p = P[o.c];
-  if (p.p) {
+  const sm = smStats(o.c);
+  if (p.k === "r" && p.mn && p.mx) {
+    if (o.up < p.mn * .6 || o.up > p.mx * 1.6) { ok = false; why.push(`Narx rasmiy kuzatuvdagi oraliqdan (${fmt(p.mn)}–${fmt(p.mx)} ${perU(o.c)}) juda uzoq: ehtimoliy xato`); }
+  } else if (p.k === "s" && sm) {
+    if (o.up < sm.min * .6 || o.up > sm.max * 1.6) { ok = false; why.push(`Narx supermarketlardagi oraliqdan (${fmt(sm.min)}–${fmt(sm.max)}) juda uzoq: ehtimoliy xato`); }
+  } else if (p.p) {
     const ratio = o.up / p.p;
-    if (ratio < .35 || ratio > 3) { ok = false; why.push(`Narx ${p.k === "r" ? "rasmiy oʻrtachadan" : "supermarket narxidan"} ${ratio < 1 ? dec(1 / ratio, 1) + " marta past" : dec(ratio, 1) + " marta yuqori"}: ehtimoliy xato, indeksga kirmaydi`); }
+    if (ratio < .45 || ratio > 2.4) { ok = false; why.push(`Narx ${p.k === "r" ? "rasmiy oʻrtachadan" : "supermarket narxidan"} ${ratio < 1 ? dec(1 / ratio, 1) + " marta past" : dec(ratio, 1) + " marta yuqori"}: ehtimoliy xato`); }
   } else if (p.lo && (o.up < p.lo || o.up > p.hi)) { ok = false; why.push(`Narx bu mahsulot uchun odatiy chegaradan (${fmt(p.lo)}–${fmt(p.hi)} ${perU(o.c)}) tashqarida: ehtimoliy xato`); }
   let cr = crowd(o.c, o.loc && o.loc.r, 30); if (cr.n < 5) cr = crowd(o.c, null, 30);
   if (ok && cr.n >= 5 && cr.mad > 0) { const z = Math.abs(o.up - cr.med) / (1.4826 * cr.mad); if (z > 4) { ok = false; why.push(`Boshqa ${cr.n} ta xabardan keskin farq qiladi (z = ${dec(z, 1)})`); } }
@@ -893,31 +956,31 @@ function discountVerdict({ c, was, now, r, ty, pl, chain, excl }) {
   const claim = 1 - now / was, p = P[c], sm = smStats(c);
   const useSm = (ty === "supermarket" || chain || p.k === "s") && sm && sm.n >= 3;
   let typ, hi, typLbl;
-  if (useSm) { typ = sm.med; hi = sm.max; typLbl = "supermarketlar medianasi"; }
-  else if (p.k === "r") { typ = regPrice(c, r) || p.p; hi = typ * 1.2; typLbl = regPrice(c, r) ? `${RG[r].s} bozor oʻrtachasi` : "respublika oʻrtachasi"; }
+  if (useSm) { typ = sm.med; hi = sm.max; typLbl = "supermarketlar oʻrtachasi"; }
+  else if (p.k === "r") { typ = regPrice(c, r) || p.p; hi = typ * 1.2; typLbl = regPrice(c, r) ? `${RG[r].s} bozor oʻrtachasi` : "Oʻzbekiston oʻrtachasi"; }
   else { const cr = crowdRef(c, r, 30, excl); if (cr.n >= 3) { typ = cr.med; hi = Math.max(cr.max, cr.med * 1.2); typLbl = cr.lbl; } }
   const since = Date.now() - 30 * 864e5, place = chain || pl;
   const hist = place ? ALL().filter(x => x.c === c && x.id !== excl && accepted(x) && Date.parse(x.t) >= since && ((x.loc && (x.loc.chain || x.loc.pl)) === place)) : [];
   const low30 = hist.length ? Math.min(...hist.map(x => x.up)) : null;
-  if (!typ && !low30) return { lab: "nomalum", score: 0, claim, real: null, parts: [{ l: "Taqqoslash uchun maʼlumot", pts: 0, max: 100, tx: "Bu mahsulot uchun rasmiy narx ham, yetarli xaridorlar xabari ham hali yoʻq. Xabaringiz saqlandi: 3 ta xabar yigʻilgach, chegirma avtomatik baholanadi." }], typ: null, hi: null, low30 };
+  if (!typ && !low30) return { lab: "nomalum", score: 0, claim, real: null, parts: [{ l: "Taqqoslash uchun maʼlumot", pts: 0, max: 100, tx: "Bu mahsulot uchun solishtiradigan narx hali yoʻq. Xabaringiz saqlandi: yana bir nechta xabar yigʻilgach, chegirma avtomatik baholanadi." }], typ: null, hi: null, low30 };
   const parts = [];
   let real;
   if (low30) {
     real = 1 - now / low30; const gap = claim - real;
-    parts.push({ l: "30 kunlik eng past narxga nisbatan", pts: 50 * clamp01((gap - .02) / .15), max: 50, tx: `Eʼlon: −${Math.round(claim * 100)}%. Shu joyda 30 kun ichidagi eng past narx ${fmt(low30)} soʻm, unga nisbatan ${real >= 0 ? "haqiqatda −" + dec(real * 100, 1) + "%" : "aksincha " + dec(-real * 100, 1) + "% qimmat"}.` });
+    parts.push({ l: "30 kunlik eng past narxga nisbatan", pts: 50 * clamp01((gap - .02) / .15), max: 50, tx: `Eʼlon −${Math.round(claim * 100)}%. Shu joyda soʻnggi 30 kundagi eng past narx ${fmt(low30)} soʻm edi: unga nisbatan ${real >= 0 ? "haqiqiy chegirma −" + dec(real * 100, 1) + "%" : "narx aksincha " + dec(-real * 100, 1) + "% qimmat"}.` });
   } else {
     real = 1 - now / typ; const gap = claim - Math.max(real, 0);
-    parts.push({ l: "Eʼlon qilingan chegirma bozor bilan solishtirildi", pts: 50 * clamp01((gap - .05) / .2), max: 50, tx: `Eʼlon: −${Math.round(claim * 100)}%. Bu joyning 30 kunlik tarixi hali yoʻq, shuning uchun ${typLbl} (${fmt(typ)} soʻm) bilan solishtirildi: haqiqiy foyda ${real >= 0 ? dec(real * 100, 1) + "%" : "yoʻq"}.` });
+    parts.push({ l: "Eʼlon qilingan chegirma bozor bilan solishtirildi", pts: 50 * clamp01((gap - .05) / .2), max: 50, tx: `Eʼlon −${Math.round(claim * 100)}%. Odatiy narx (${typLbl}, ${fmt(typ)} soʻm) bilan solishtirganda haqiqiy foyda ${real > .005 ? dec(real * 100, 1) + "%" : "yoʻq"}.` });
   }
   if (typ) {
     const infl = was / hi - 1;
-    parts.push({ l: "“Eski narx” real edimi?", pts: 25 * clamp01(infl / .2), max: 25, tx: infl > 0 ? `Eski narx ${fmt(was)} soʻm odatdagi eng yuqori narxdan (${fmt(hi)} soʻm) ${pct(infl, 0)} baland: sunʼiy oshirilgan boʻlishi mumkin.` : `Eski narx odatdagi oraliqda (eng yuqori ${fmt(hi)} soʻm).` });
+    parts.push({ l: "“Eski narx” real edimi?", pts: 25 * clamp01(infl / .2), max: 25, tx: infl > .02 ? `“Eski narx” ${fmt(was)} soʻm odatdagi eng yuqori narxdan (${fmt(hi)} soʻm) ${pct(infl, 0)} baland: sunʼiy oshirilgan boʻlishi mumkin.` : `“Eski narx” odatdagi oraliqda (eng yuqori ${fmt(hi)} soʻm).` });
     const above = now / typ - 1;
-    parts.push({ l: "Aksiya narxi odatdagidan arzonmi?", pts: 15 * clamp01((above + .03) / .08), max: 15, tx: above >= -.03 ? `Aksiya narxi ${fmt(now)} soʻm ${typLbl}dan (${fmt(typ)} soʻm) arzon emas.` : `Aksiya narxi ${typLbl}dan ${pct(-above, 0)} arzon.` });
+    parts.push({ l: "Aksiya narxi odatdagidan arzonmi?", pts: 15 * clamp01((above + .03) / .08), max: 15, tx: above >= -.03 ? `Aksiya narxi (${fmt(now)} soʻm) odatiy narxdan (${fmt(typ)} soʻm) arzon emas.` : `Aksiya narxi odatiy narxdan ${pct(-above, 0)} arzon.` });
   }
   const since60 = Date.now() - 60 * 864e5;
   const weeks = new Set(place ? ALL().filter(x => x.c === c && x.old && Date.parse(x.t) >= since60 && ((x.loc && (x.loc.chain || x.loc.pl)) === place)).map(x => x.wk) : []);
-  parts.push({ l: "Tugamaydigan aksiya", pts: weeks.size >= 4 ? 10 : 0, max: 10, tx: place ? `Soʻnggi 60 kunda shu joyda ${weeks.size} xil haftada aksiya qayd etilgan.` : "Joy nomi nomaʼlum, tekshirib boʻlmadi." });
+  parts.push({ l: "Tugamaydigan aksiya", pts: weeks.size >= 4 ? 10 : 0, max: 10, tx: weeks.size >= 4 ? `Bu joyda “aksiya” soʻnggi 60 kun ichida ${weeks.size} xil haftada qayd etilgan: doimiy narx boʻlishi mumkin.` : "Doimiy “aksiya” belgisi topilmadi.", hide: !place });
   const maxPts = parts.reduce((s, x) => s + x.max, 0);
   const score = Math.round(parts.reduce((s, x) => s + x.pts, 0) / maxPts * 100);
   return { lab: score >= 55 ? "soxta" : score >= 25 ? "chalgituvchi" : "haqiqiy", score, claim, real, parts, typ, hi, low30 };
@@ -947,11 +1010,11 @@ async function aiParseText(text) { return await aiCall("/parse", { text: String(
 async function aiExplain(kind, ctx) { const j = await aiCall("/explain", { kind, ctx }, 40000); return String(j && j.text || "").trim(); }
 function aiErr(e) {
   const c = e && e.code;
-  if (c === "rate_limited") return "Bugungi AI limiti tugadi yoki soʻrovlar juda koʻp. Bir ozdan soʻng qayta urinib koʻring yoki narxni yozib yuboring.";
-  if (c === "no_ai") return "Serverda AI kaliti sozlanmagan.";
-  if (c === "timeout") return "AI javobi kechikdi (internet sekin boʻlishi mumkin). Qayta urinib koʻring yoki narxni yozib yuboring.";
-  if (c === "unavailable") return navigator.onLine === false ? "Internet yoʻq. Narxni yozib yuborsangiz, telefonda saqlanadi va keyin yuboriladi." : "Serverga ulanib boʻlmadi. Birozdan soʻng qayta urinib koʻring.";
-  return "AI javob bermadi. Qayta urinib koʻring yoki narxni yozib yuboring.";
+  if (c === "rate_limited") return "Bugun rasm tahlili limiti tugadi yoki soʻrovlar juda koʻp. Birozdan soʻng qayta urinib koʻring yoki narxni yozib yuboring.";
+  if (c === "no_ai") return "Rasm tahlili hozircha ishlamayapti. Narxni yozib yuborishingiz mumkin.";
+  if (c === "timeout") return "Javob kechikdi: internet sekin boʻlishi mumkin. Qayta urinib koʻring yoki narxni yozib yuboring.";
+  if (c === "unavailable") return navigator.onLine === false ? "Internet yoʻq. Narxni yozib yuborsangiz, telefonda saqlanadi va internet qaytganda yuboriladi." : "Serverga ulanib boʻlmadi. Birozdan soʻng qayta urinib koʻring.";
+  return "Rasmni oʻqib boʻlmadi. Qayta urinib koʻring yoki narxni yozib yuboring.";
 }
 
 /* ============ Saqlash (avval telefonga, keyin serverga) ============ */
@@ -979,7 +1042,17 @@ function renderAll() { renderLocChip(); render(TAB); }
 let refreshT = null;
 function refresh() { clearTimeout(refreshT); refreshT = setTimeout(() => { if (!$("#sheet").classList.contains("open") || !SHEET_LOCK) render(TAB); }, 150); }
 const wire = (sel, fn) => document.querySelectorAll(sel).forEach(fn);
-const daysToNY = () => Math.ceil((Date.UTC(new Date().getFullYear(), 11, 31) - Date.now()) / 864e5);
+const daysToNY = () => Math.ceil((Date.UTC(new Date().getFullYear() + 1, 0, 1) - Date.now()) / 864e5);
+const ADMIN = () => !!LS.get("nr-admin", 0);
+const vnum = v => String(v || "0").split(".").map(x => +x || 0);
+const vgt = (a, b) => { const x = vnum(a), y = vnum(b); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+let UPD_STATE = null;
+function updCard() {
+  if (!UPD_STATE) return "";
+  if (UPD_STATE.kind === "ready") return `<div class="upd">${IC.spark}<div class="grow"><b>Yangi versiya tayyor</b><span>Ilova qayta ochilganda oʻrnatiladi.</span></div><button class="btn" id="upd-now">Yangilash</button></div>`;
+  return `<div class="upd">${IC.spark}<div class="grow"><b>Ilovaning yangi versiyasi chiqdi</b><span>Bu yangilanish uchun yangi ilovani oʻrnatish kerak.</span></div></div>`;
+}
+function wireUpd() { const b = $("#upd-now"); if (b) b.onclick = () => updNow(); }
 
 function repRow(x) {
   const p = P[x.c];
@@ -998,12 +1071,12 @@ function renderHome() {
   let reps = ALL().filter(x => !r || (x.loc && x.loc.r === r)).slice(0, 5), local = !!r;
   if (!reps.length) { reps = ALL().slice(0, 5); local = false; }
   const nAll = ALL().length;
-  $("#v-asosiy").innerHTML = `
+  $("#v-asosiy").innerHTML = `${updCard()}
   <section class="hero" aria-label="Oylik savat">
     <div class="lbl">${r ? esc(RG[r].s) + " · " : ""}Oylik oziq-ovqat savati</div>
     <div class="bigw num">${fmt(b)} <small>soʻm</small></div>
-    <div class="hrow"><span class="glass">Haftada ${pct(bRep / bp - 1)}</span><span class="glass">Bir yilda ${pct(bRep / by - 1)}</span></div>
-    <div class="meta">narx.stat.uz · ${dfull(REF.week)} · 21 mahsulot · oʻzgarish respublika boʻyicha</div>
+    <div class="hrow"><span class="glass">Bir haftada ${pct(bRep / bp - 1)}</span>${REF.noYear ? "" : `<span class="glass">Bir yilda ${pct(bRep / by - 1)}</span>`}</div>
+    <div class="meta">21 ta asosiy mahsulot · rasmiy narxlar, ${dfull(REF.week)} · oʻzgarish Oʻzbekiston boʻyicha</div>
     <div class="hbtns"><button class="hbtn" id="h-cam">${IC.cam} Rasmga olish</button><button class="hbtn alt" id="h-write">${IC.pen} Yozish</button></div>
   </section>
   ${installCard()}
@@ -1018,8 +1091,8 @@ function renderHome() {
   <div class="cats">${Object.entries(CATS).map(([k, [n, e]]) => `<button class="cat" data-cat="${k}"><span class="e">${e}</span>${esc(n)}</button>`).join("")}</div>
   <div class="sec"><h2>${local ? esc(RG[r].s) + ": soʻnggi xabarlar" : "Soʻnggi xabarlar"}</h2>${nAll ? `<span class="muted small">${nAll} ta</span>` : ""}</div>
   <section class="card" style="padding:6px 14px">${reps.length ? `<div class="list">${reps.map(repRow).join("")}</div>` : emptyBox("Hali xabar yoʻq. Birinchi boʻlib narx yuboring: har bir xabar indeksni aniqroq qiladi.")}</section>
-  <div class="trust">${IC.shield}<div><b>Inson aralashmaydi.</b> Barcha tahlilni AI va algoritmlar bajaradi. Manbalar: narx.stat.uz (Statistika agentligi), narxtahlil.uz (Markaziy bank) va xaridorlar xabarlari.</div></div>
-  <p class="note">Yangi yilgacha ${daysToNY()} kun. Bayram oldidan narx sakrashlari <b>Indeks</b> boʻlimida avtomatik kuzatiladi.</p>`;
+  <div class="trust">${IC.shield}<div><b>Xolis baho.</b> Narxni hech kim qoʻlda oʻzgartira olmaydi: baho rasmiy statistika, supermarket narxlari va xaridorlar xabarlari asosida avtomatik chiqadi.</div></div>
+  ${daysToNY() <= 45 ? `<p class="note">Yangi yilgacha ${daysToNY()} kun. Bayram oldidan narx sakrashlari <b>Indeks</b> boʻlimida kuzatiladi.</p>` : ""}`;
   const ib = $("#h-install"); if (ib) ib.onclick = async () => { const ev = INSTALL_EVT; if (!ev) return; ev.prompt(); try { await ev.userChoice; } catch (e) { } INSTALL_EVT = null; renderHome(); };
   $("#h-cam").onclick = () => pickPhoto("narx", true);
   $("#h-write").onclick = () => openWrite();
@@ -1027,13 +1100,14 @@ function renderHome() {
   wire("#v-asosiy [data-p]", b => b.onclick = () => openProduct(+b.dataset.p, r));
   wire("#v-asosiy [data-cat]", b => b.onclick = () => { PRICE_CAT = b.dataset.cat; PRICE_Q = ""; setTab("narxlar"); });
   wire("#v-asosiy [data-act]", b => b.onclick = () => openAct());
+  wireUpd();
 }
 
 /* ---------- Narxlar ---------- */
 function priceCell(p, r) {
-  if (p.k === "r") { const v = r ? regPrice(p.c, r) : null; return { v: v || p.p, s: r && !v ? "hudud narxi yoʻq: respublika" : `${unitTxt(p.u)} uchun`, chg: pctCh(p) }; }
-  if (p.k === "s") return { v: p.p, s: "supermarketlar medianasi", chg: null };
-  const cr = crowdRef(p.c, r); return cr.n >= 3 ? { v: cr.med, s: `${cr.n} ta xabar · ${cr.lbl.startsWith("xaridor") ? "respublika" : RG[r].s}`, chg: null } : { v: null, s: cr.n ? `${cr.n} ta xabar · yana ${3 - cr.n} ta kerak` : "hali xabar yoʻq", chg: null };
+  if (p.k === "r") { const v = r ? regPrice(p.c, r) : null; return { v: v || p.p, s: r && !v ? "oʻrtacha narx" : `${unitTxt(p.u)} uchun`, chg: pctCh(p) }; }
+  if (p.k === "s") return { v: p.p, s: `${unitTxt(p.u)} uchun`, chg: null };
+  const cr = crowdRef(p.c, r); return cr.n >= 3 ? { v: cr.med, s: `${cr.n} ta xabar asosida`, chg: null } : { v: null, s: cr.n ? `${cr.n}/3 xabar` : "hali narx yoʻq", chg: null };
 }
 function renderPrices() {
   const r = VIEW_REGION ?? (LOC && LOC.r) ?? "";
@@ -1042,15 +1116,15 @@ function renderPrices() {
   const groups = {}; for (const p of prods) (groups[p.cat] ||= []).push(p);
   const cnt = { r: 0, s: 0, x: 0 }; for (const p of REF.products) cnt[p.k]++;
   $("#v-narxlar").innerHTML = `
-  <div class="title"><h1>Narxlar</h1><p>${REF.products.length} ta mahsulot: ${cnt.r} tasi rasmiy, ${cnt.s} tasi supermarket, ${cnt.x} tasi xalq narxi.</p></div>
+  <div class="title"><h1>Narxlar</h1><p>${REF.products.length} ta mahsulot: bozor, supermarket va zapravka narxlari.</p></div>
   <div class="search">${IC.search}<input class="in" id="pr-q" type="search" placeholder="Mahsulotni qidiring: goʻsht, benzin…" value="${esc(PRICE_Q)}" aria-label="Mahsulotni qidiring"></div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="selchip" id="pr-reg" aria-label="Hudud"><option value="">📍 Respublika boʻyicha</option>${REGIONS.map(x => `<option value="${x.c}" ${x.c === r ? "selected" : ""}>📍 ${esc(x.n)}</option>`).join("")}</select></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="selchip" id="pr-reg" aria-label="Hudud"><option value="">📍 Butun Oʻzbekiston</option>${REGIONS.map(x => `<option value="${x.c}" ${x.c === r ? "selected" : ""}>📍 ${esc(x.n)}</option>`).join("")}</select></div>
   <div class="cats"><button class="cat" data-cat="" aria-pressed="${!PRICE_CAT}"><span class="e">✨</span>Hammasi</button>${Object.entries(CATS).map(([k, [n, e]]) => `<button class="cat" data-cat="${k}" aria-pressed="${PRICE_CAT === k}"><span class="e">${e}</span>${esc(n)}</button>`).join("")}</div>
   ${Object.keys(CATS).filter(k => groups[k]).map(k => `<p class="cathead"><span class="e">${CATS[k][1]}</span>${CATS[k][0]} · ${groups[k].length}</p><section class="card" style="padding:4px 14px"><div class="list">${groups[k].map(p => {
     const pc = priceCell(p, r);
-    return `<button class="li" data-p="${p.c}">${av(p.c)}<div class="grow"><div class="t">${esc(p.n)}</div><div class="s">${srcBadge(p.c)} ${esc(pc.s)}</div></div><div class="r">${pc.v ? `<span class="p num">${fmt(pc.v)}</span>` : `<span class="p na">narx yuboring</span>`}${pc.chg !== null && pc.chg !== undefined ? chg(pc.chg) : `<span class="muted small">${perU(p.c)}</span>`}</div></button>`;
+    return `<button class="li" data-p="${p.c}">${av(p.c)}<div class="grow"><div class="t">${esc(p.n)}</div><div class="s">${srcBadge(p.c)} ${esc(pc.s)}</div></div><div class="r">${pc.v ? `<span class="p num">${fmt(pc.v)}</span>` : `<span class="addp">+ Narx</span>`}${pc.chg !== null && pc.chg !== undefined ? chg(pc.chg) : pc.v ? `<span class="muted small">${perU(p.c)}</span>` : ""}</div></button>`;
   }).join("")}</div></section>`).join("") || `<div class="empty">Topilmadi. Boshqacha yozib koʻring.</div>`}
-  <p class="note">Rasmiy narxlar: narx.stat.uz, ${dfull(REF.week)} (dehqon bozorlari oʻrtachasi). Haftalik oʻzgarish respublika boʻyicha (${dlabel(REF.prev)} → ${dlabel(REF.week)}). Supermarket: ${esc(REF.smNote)}. Xalq narxi kamida 3 ta xabardan keyin chiqadi.</p>`;
+  <p class="note">Rasmiy narxlar: Statistika agentligi (narx.stat.uz), ${dfull(REF.week)}. Haftalik oʻzgarish Oʻzbekiston boʻyicha. Supermarket narxlari: narxtahlil.uz. Xalq narxi kamida 3 ta xabardan keyin chiqadi.</p>`;
   $("#pr-reg").onchange = e => { VIEW_REGION = e.target.value; renderPrices(); };
   const qi = $("#pr-q"); qi.oninput = e => { PRICE_Q = e.target.value; clearTimeout(qi.t); qi.t = setTimeout(() => { renderPrices(); const n = $("#pr-q"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 260); };
   wire("#v-narxlar [data-cat]", b => b.onclick = () => { PRICE_CAT = b.dataset.cat; renderPrices(); });
@@ -1061,19 +1135,20 @@ function openProduct(c, r) {
   const p = P[c]; const regs = p.r ? REGIONS.map(x => ({ x, v: p.r[x.c] })).filter(o => o.v).sort((a, b) => b.v - a.v) : [];
   const mx = regs.length ? regs[0].v : 1, sm = smStats(c), crs = ALL().filter(x => x.c === c).slice(0, 8), cr = crowd(c, null, 30), crR = r ? crowd(c, r, 30) : { n: 0 };
   const main = p.k === "r" ? (r && regPrice(c, r) || p.p) : p.k === "s" ? p.p : (crowdRef(c, r).med || null);
-  const mainLbl = p.k === "r" ? `${r && regPrice(c, r) ? esc(RG[r].n) + " oʻrtachasi" : "Respublika oʻrtachasi"} · narx.stat.uz, ${dfull(p.rd || REF.week)}` : p.k === "s" ? `6 ta supermarket tarmogʻi medianasi · narxtahlil.uz` : main ? "Xaridorlar xabarlari medianasi (30 kun)" : "Rasmiy statistika bu mahsulotni kuzatmaydi";
+  const mainLbl = p.k === "r" ? `${r && regPrice(c, r) ? esc(RG[r].n) + " oʻrtachasi" : "Oʻzbekiston oʻrtachasi"} · rasmiy narx, ${dfull(p.rd || REF.week)}` : p.k === "s" ? `6 ta supermarket tarmogʻi oʻrtachasi · narxtahlil.uz` : main ? "Xaridorlar xabarlari asosida (30 kun)" : "Rasmiy statistika bu mahsulotni kuzatmaydi";
   openSheet(p.n, `
   <section class="card">
     <div style="display:flex;gap:14px;align-items:center">${av(c, "lg")}<div><h2 style="font-size:19px">${esc(p.n)}</h2><div style="margin-top:4px">${srcBadge(c)} <span class="muted small">${unitTxt(p.u)} uchun</span></div></div></div>
     ${main ? `<div class="big num">${fmt(main)} <span class="unit">${perU(c)}</span></div>` : `<div class="big" style="font-size:22px">Narx hali yoʻq</div>`}
     <p class="sub">${mainLbl}</p>
-    ${p.k === "r" ? `<div class="tiles"><div class="tile"><b class="num">${pct(pctCh(p))}</b><span>Bir haftada (respublika)</span></div><div class="tile"><b class="num">${pct(p.y / (p.p - p.y))}</b><span>Bir yilda (${dlabel(REF.yearAgo)} dan)</span></div></div>` : ""}
+    ${p.k === "r" && r && p.rl && p.rl[r] && p.rh && p.rh[r] ? `<p class="sub" style="margin:0">${esc(RG[r].s)} tumanlarida odatda: <b class="num">${fmt(p.rl[r])}–${fmt(p.rh[r])}</b> ${perU(c)}</p>` : ""}
+    ${p.k === "r" ? `<div class="tiles"><div class="tile"><b class="num">${p.wOk === false ? "—" : pct(pctCh(p))}</b><span>Bir haftada (Oʻzbekiston)</span></div><div class="tile"><b class="num">${p.yOk === false ? "—" : pct(p.y / (p.p - p.y))}</b><span>Bir yilda (${dfull(REF.yearAgo)}dan)</span></div></div>` : ""}
     <button class="btn" id="op-send">${IC.pen} Shu mahsulot narxini yuborish</button>
   </section>
-  ${p.k === "x" ? `<p class="note">Bu mahsulot uchun rasmiy narx eʼlon qilinmaydi. NarxRadar narxni xaridorlar xabarlaridan yigʻadi: kamida 3 ta xabar boʻlganda xalq narxi va baholash avtomatik ishlaydi. Har bir xabar algoritm bilan tekshiriladi.</p>` : ""}
-  ${regs.length ? `<section class="card"><h3>Viloyatlar boʻyicha</h3><div class="bars">${regs.map(o => `<div class="bar ${o.x.c === r ? "me" : ""}"><span>${esc(o.x.s)}</span><div class="track"><div class="fill" style="width:${(o.v / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(o.v)}</span></div>`).join("")}</div><p class="sub">Eng qimmat va eng arzon viloyat farqi: ${pct(regs[0].v / regs[regs.length - 1].v - 1, 0)}.</p></section>` : p.k === "r" ? `<p class="note">Bu mahsulot uchun viloyat narxlari eʼlon qilinmagan: respublika oʻrtachasi ishlatiladi.</p>` : ""}
+  ${p.k === "x" ? `<p class="note">Bu mahsulot uchun rasmiy narx eʼlon qilinmaydi. Narx xaridorlar xabarlaridan chiqadi: kamida 3 ta xabar boʻlganda xalq narxi va baho avtomatik ishlaydi.</p>` : ""}
+  ${regs.length ? `<section class="card"><h3>Viloyatlar boʻyicha</h3><div class="bars">${regs.map(o => `<div class="bar ${o.x.c === r ? "me" : ""}"><span>${esc(o.x.s)}</span><div class="track"><div class="fill" style="width:${(o.v / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(o.v)}</span></div>`).join("")}</div><p class="sub">Eng qimmat va eng arzon viloyat farqi: ${pct(regs[0].v / regs[regs.length - 1].v - 1, 0)}.</p></section>` : p.k === "r" ? `<p class="note">Bu mahsulot uchun viloyat narxlari eʼlon qilinmagan: Oʻzbekiston oʻrtachasi ishlatiladi.</p>` : ""}
   ${sm ? `<section class="card"><h3>Supermarketlarda (Toshkent)</h3><div class="list">${REF.chains.map((ch, i) => sm.row[i] ? `<div class="li"><div class="grow"><div class="t">${esc(ch)}</div></div><span class="p num">${fmt(sm.row[i])}</span>${sm.row[i] === sm.min ? `<span class="pill arzon sm">eng arzon</span>` : sm.row[i] === sm.max ? `<span class="pill juda sm">eng qimmat</span>` : ""}</div>` : "").join("")}</div><p class="sub">${esc(REF.smNote)}. Farq: ${pct(sm.max / sm.min - 1, 0)}.</p></section>` : ""}
-  ${cr.n ? `<section class="card"><h3>Xaridorlar xabarlari (30 kun)</h3><div class="tiles"><div class="tile"><b class="num">${fmt(cr.med)}</b><span>Mediana · ${cr.n} ta xabar</span></div><div class="tile"><b class="num">${fmt(cr.min)}–${fmt(cr.max)}</b><span>Oraliq, ${perU(c)}</span></div>${crR.n ? `<div class="tile"><b class="num">${fmt(crR.med)}</b><span>${esc(RG[r].s)} · ${crR.n} ta</span></div>` : ""}</div></section>` : ""}
+  ${cr.n ? `<section class="card"><h3>Xaridorlar xabarlari (30 kun)</h3><div class="tiles"><div class="tile"><b class="num">${fmt(cr.med)}</b><span>Oʻrtacha · ${cr.n} ta xabar</span></div><div class="tile"><b class="num">${fmt(cr.min)}–${fmt(cr.max)}</b><span>Oraliq, ${perU(c)}</span></div>${crR.n ? `<div class="tile"><b class="num">${fmt(crR.med)}</b><span>${esc(RG[r].s)} · ${crR.n} ta</span></div>` : ""}</div></section>` : ""}
   <section class="card"><h3>Soʻnggi xabarlar</h3>${crs.length ? `<div class="list">${crs.map(repRow).join("")}</div>` : `<div class="empty">Hali xabar yoʻq</div>`}</section>`);
   $("#op-send").onclick = () => openWrite("", c);
 }
@@ -1088,28 +1163,28 @@ function renderIndex() {
   const myReg = r ? regs.findIndex(o => o.x.c === r) + 1 : 0;
   $("#v-indeks").innerHTML = `
   <section class="hero ix">
-    <div class="lbl">NarxRadar indeksi · ${dlabel(REF.yearAgo)} 2025 = 100</div>
-    <div class="bigw num">${dec(b / by * 100, 1)}</div>
-    <div class="hrow"><span class="glass">Savat: ${fmt(b)} soʻm/oy</span><span class="glass">Haftada ${pct(b / bp - 1)}</span></div>
-    <div class="meta">narx.stat.uz namunaviy savatidagi 21 mahsulot · ${dfull(REF.week)}</div>
+    <div class="lbl">${REF.noYear ? "Oylik savat · Oʻzbekiston" : `Narx indeksi · ${dfull(REF.yearAgo)} = 100`}</div>
+    <div class="bigw num">${REF.noYear ? fmt(b) + " <small>soʻm</small>" : dec(b / by * 100, 1)}</div>
+    <div class="hrow"><span class="glass">Oylik savat: ${fmt(b)} soʻm</span><span class="glass">Bir haftada ${pct(b / bp - 1)}</span></div>
+    <div class="meta">Oʻzbekiston boʻyicha · 21 ta asosiy oziq-ovqat mahsuloti · ${dfull(REF.week)}</div>
   </section>
   <section class="card">
     <h2>Savat narxi qanday oʻzgardi</h2>
     <div class="cmp">
-      <div class="bar"><span>${dlabel(REF.yearAgo)} 2025</span><div class="track"><div class="fill" style="width:${(by / b * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(by)}</span></div>
+      ${REF.noYear ? "" : `<div class="bar"><span>${dlabel(REF.yearAgo)} ${String(REF.yearAgo).slice(0, 4)}</span><div class="track"><div class="fill" style="width:${(by / b * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(by)}</span></div>`}
       <div class="bar"><span>${dlabel(REF.prev)}</span><div class="track"><div class="fill" style="width:${(bp / b * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(bp)}</span></div>
       <div class="bar me"><span>${dlabel(REF.week)}</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="v num">${fmt(b)}</span></div>
     </div>
   </section>
   <section class="card">
     <h2>Xalq indeksi</h2>
-    <p class="sub">Xuddi shu savat, lekin xaridorlar yuborgan haqiqiy narxlar bilan (soʻnggi 14 kun, kamida 3 ta xabar boʻlgan mahsulotlar).</p>
-    <div class="tiles"><div class="tile"><b class="num">${fmt(cb.s)}</b><span>Savat, soʻm/oy</span></div><div class="tile"><b class="num">${cb.cov ? pct(cb.s / cb.off - 1) : "—"}</b><span>Rasmiydan farq · qamrov ${Math.round(cb.cov * 100)}%</span></div></div>
-    ${wr.length >= 2 ? sparkline(wr) : `<p class="note">Haftalik grafik kamida 2 haftalik xabarlar yigʻilganda paydo boʻladi. Hozir: ${ALL().filter(accepted).length} ta qabul qilingan xabar.</p>`}
+    <p class="sub">Xuddi shu savat, xaridorlar yuborgan haqiqiy narxlar bilan (soʻnggi 14 kun).</p>
+    ${cb.cov ? `<div class="tiles"><div class="tile"><b class="num">${fmt(cb.s)}</b><span>Savat, soʻm/oy</span></div><div class="tile"><b class="num">${pct(cb.s / cb.off - 1)}</b><span>Rasmiy narxdan farq</span></div></div><p class="sub">Savatdagi mahsulotlarning ${Math.round(cb.cov * 100)}% i boʻyicha yetarli xabar bor.</p>` : `<div class="empty">Hali yetarli xabar yoʻq. Har bir yuborilgan narx bu koʻrsatkichni aniqroq qiladi.</div>`}
+    ${wr.length >= 2 ? sparkline(wr) : cb.cov ? `<p class="note">Haftalik grafik yetarli xabar yigʻilgach chiqadi.</p>` : ""}
   </section>
   <section class="card">
-    <h2>Yangi yil oldidan nazorat</h2>
-    <p class="sub">${daysToNY()} kun qoldi. Bir haftada 5% dan koʻp qimmatlagan mahsulotlar avtomatik belgilanadi.</p>
+    <h2>Narx sakrashlari</h2>
+    <p class="sub">${daysToNY() <= 45 ? `Yangi yilgacha ${daysToNY()} kun. ` : ""}Bir haftada 5% dan koʻp qimmatlagan mahsulotlar.</p>
     ${jumps.length || crowdJ.length ? `<div class="list">${jumps.map(({ p, w }) => `<button class="li" data-p="${p.c}">${av(p.c)}<div class="grow"><div class="t">${esc(p.n)}</div><div class="s num">${fmt(p.p - p.w)} → ${fmt(p.p)} ${perU(p.c)} · rasmiy</div></div>${chg(w)}</button>`).join("")}
     ${crowdJ.map(({ p, w }) => `<button class="li" data-p="${p.c}">${av(p.c)}<div class="grow"><div class="t">${esc(p.n)}</div><div class="s">xaridorlar xabarlari boʻyicha</div></div>${chg(w)}</button>`).join("")}</div>` : `<div class="empty">Bu hafta keskin sakrash yoʻq.</div>`}
   </section>
@@ -1119,12 +1194,12 @@ function renderIndex() {
     <div class="bars">${regs.map(o => `<div class="bar ${o.x.c === r ? "me" : ""}"><span>${esc(o.x.s)}</span><div class="track"><div class="fill" style="width:${(o.v / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(o.v)}</span></div>`).join("")}</div>
     <p class="sub">Olma uchun viloyat narxi yoʻq, respublika narxi olingan. Pomidor va oliy nav un viloyat narxlari ${dlabel(REF.prev)} holatiga.</p>
   </section>
-  ${CAP.sample ? `<section class="card"><h2>AI haftalik sharhi</h2><div id="ix-ai"><button class="btn2" id="ix-ai-btn">${IC.spark} AI sharh yozsin</button></div></section>` : ""}`;
+  ${CAP.sample ? `<section class="card"><h2>Haftalik sharh</h2><p class="sub">Shu haftadagi narx oʻzgarishlari qisqa matnda.</p><div id="ix-ai"><button class="btn2" id="ix-ai-btn">${IC.spark} Sharhni koʻrish</button></div></section>` : ""}`;
   wire("#v-indeks [data-p]", el => el.onclick = () => openProduct(+el.dataset.p, r));
   const ab = $("#ix-ai-btn"); if (ab) ab.onclick = async () => {
-    const box = $("#ix-ai"); box.innerHTML = `<p class="sub">AI yozmoqda…</p>`;
+    const box = $("#ix-ai"); box.innerHTML = `<div class="status"><span class="spin"></span><div>Tayyorlanmoqda…</div></div>`;
     const ctx = { savat: Math.round(b), haftalik: pct(b / bp - 1), yillik: pct(b / by - 1), eng_qimmatlagan: jumps.slice(0, 5).map(o => `${o.p.n} ${pct(o.w)}`), eng_qimmat_viloyat: regs[0].x.n, eng_arzon_viloyat: regs[regs.length - 1].x.n, xalq_qamrovi: Math.round(cb.cov * 100) + "%", yangi_yilgacha_kun: daysToNY() };
-    try { const tx = await aiExplain("index", ctx); box.innerHTML = `<div class="ai"><b>AI sharhi</b>${esc(tx)}</div>`; }
+    try { const tx = await aiExplain("index", ctx); box.innerHTML = `<div class="ai"><b>Haftalik sharh</b>${esc(tx)}</div>`; }
     catch (e) { box.innerHTML = `<p class="note">${aiErr(e)}</p>`; }
   };
 }
@@ -1146,7 +1221,7 @@ function renderDisc() {
   <section class="hero disc">
     <div class="lbl">Isteʼmolchi himoyasi</div>
     <h1>Chegirma haqiqiymi?</h1>
-    <p>“−30%” deb yozilgan, lekin eski narx oldin sunʼiy oshirilgan boʻlishi mumkin. Yorliqni suratga oling: AI va algoritm 4 ta mezon boʻyicha tekshiradi.</p>
+    <p>“−30%” deb yozilgan, lekin eski narx oldin sunʼiy oshirilgan boʻlishi mumkin. Yorliqni suratga oling: NarxRadar 4 ta mezon boʻyicha tekshiradi.</p>
     <div class="hbtns"><button class="hbtn" id="d-cam" style="color:#c2364a">${IC.cam} Suratga olish</button><button class="hbtn alt" id="d-demo">${IC.play} Namuna</button></div>
   </section>
   ${st.haqiqiy + st.chalgituvchi + st.soxta ? `<div class="quick"><div class="qt"><b class="num" style="font-size:22px;color:var(--good)">${st.haqiqiy}</b><span>haqiqiy</span></div><div class="qt"><b class="num" style="font-size:22px;color:var(--warn)">${st.chalgituvchi}</b><span>chalgʻituvchi</span></div><div class="qt"><b class="num" style="font-size:22px;color:var(--crit)">${st.soxta}</b><span>soxta</span></div></div>` : ""}
@@ -1161,7 +1236,7 @@ function renderDisc() {
   <section class="card">
     <h2>Qanday tekshiriladi</h2>
     <ul class="checks">
-      <li class="ok">${IC.ok}<span><b>30 kunlik eng past narx.</b> Chegirma sotuvchining oxirgi 30 kundagi eng past narxiga nisbatan hisoblanadi (Yevropa Ittifoqi Omnibus direktivasi, 6a-modda qoidasi).</span></li>
+      <li class="ok">${IC.ok}<span><b>30 kunlik eng past narx.</b> Chegirma shu joydagi oxirgi 30 kunlik eng past narxga nisbatan hisoblanadi (Yevropa Ittifoqidagi qoida asosida).</span></li>
       <li class="ok">${IC.ok}<span><b>“Eski narx” realmi.</b> Bozor va supermarketlardagi odatiy eng yuqori narx bilan solishtiriladi.</span></li>
       <li class="ok">${IC.ok}<span><b>Aksiya narxi arzonmi.</b> Odatiy narxdan haqiqatan pastmi, tekshiriladi.</span></li>
       <li class="ok">${IC.ok}<span><b>Tugamaydigan aksiya.</b> Bir joyda haftalab davom etadigan “aksiyalar” xabarlar tarixidan topiladi.</span></li>
@@ -1182,72 +1257,57 @@ function renderDisc() {
   };
 }
 
-/* ---------- Maʼlumot va sozlamalar ---------- */
+/* ---------- Profil va sozlamalar ---------- */
 function renderData() {
-  const all = ALL(), acc = all.filter(accepted), photo = all.filter(x => x.src === "rasm").length;
-  const regs = new Set(all.map(x => x.loc && x.loc.r).filter(Boolean)), prodsCovered = new Set(acc.map(x => x.c)).size;
-  const dbState = !CAP.db ? "Server ulanmagan: xabarlar shu telefonda saqlanadi." : CAP.dbErr === "oflayn" ? "Internet yoʻq: xabarlar telefonda saqlanib, internet qaytganda yuboriladi." : CAP.dbErr ? "Serverdan maʼlumot olib boʻlmadi. Bir daqiqadan soʻng yana urinadi." : "Umumiy bazaga ulangan: har bir xabar barcha foydalanuvchilar uchun indeksga qoʻshiladi.";
+  const all = ALL(), own = OWN(), ownAcc = own.filter(accepted), ownDisc = own.filter(x => x.old && (x.d === "soxta" || x.d === "chalgituvchi")).length;
+  const ownRegs = new Set(own.map(x => x.loc && x.loc.r).filter(Boolean)).size, adm = ADMIN();
+  const dbState = !CAP.db ? "Hozir server bilan aloqa yoʻq: xabarlaringiz shu telefonda saqlanadi." : CAP.dbErr === "oflayn" ? "Internet yoʻq: xabarlar telefonda saqlanadi va internet qaytganda yuboriladi." : CAP.dbErr ? "Serverdan maʼlumot olib boʻlmadi. Birozdan soʻng yana urinadi." : "Har bir xabaringiz barcha foydalanuvchilar uchun narxlarni aniqroq qiladi.";
   $("#v-malumot").innerHTML = `
-  <div class="title"><h1>Maʼlumot bazasi</h1><p>Rasm va yozma xabarlardan avtomatik yigʻilayotgan narx bazasi.</p></div>
+  <div class="title"><h1>Profil</h1><p>Hissangiz, sozlamalar va ilova haqida.</p></div>
+  ${updCard()}
   <section class="card">
+    <h2>Sizning hissangiz</h2>
     <div class="tiles">
-      <div class="tile"><b class="num">${all.length}</b><span>Jami xabar</span></div>
-      <div class="tile"><b class="num">${all.length ? Math.round(acc.length / all.length * 100) : 0}%</b><span>Avtomatik qabul qilingan</span></div>
-      <div class="tile"><b class="num">${all.length ? Math.round(photo / all.length * 100) : 0}%</b><span>Rasm orqali</span></div>
-      <div class="tile"><b class="num">${regs.size}/14</b><span>Hudud qamrovi</span></div>
-      <div class="tile"><b class="num">${prodsCovered}/${REF.products.length}</b><span>Xabar bor mahsulotlar</span></div>
-      <div class="tile"><b class="num">${OWN().length}</b><span>Siz yuborgan</span></div>
+      <div class="tile"><b class="num">${own.length}</b><span>Yuborgan narxlaringiz</span></div>
+      <div class="tile"><b class="num">${ownAcc.length}</b><span>Hisobga olingan</span></div>
+      <div class="tile"><b class="num">${ownDisc}</b><span>Topilgan shubhali chegirma</span></div>
+      <div class="tile"><b class="num">${ownRegs}</b><span>Hudud</span></div>
     </div>
     <p class="note">${dbState}</p>
-    <div class="row2"><button class="btn2" id="m-csv">${IC.dl} CSV</button><button class="btn2" id="m-copy">CSV nusxalash</button></div>
-  </section>
-  <section class="card">
-    <h2>Maʼlumot qanday yigʻiladi</h2>
-    <ol class="pipe">
-      <li><span><b>Xaridor rasm yoki matn yuboradi</b>Roʻyxatdan oʻtish shart emas.</span></li>
-      <li><span><b>AI yorliqni oʻqiydi</b>Mahsulot, narx, qadoq, eski narx va doʻkon nomi. Oʻzbek (lotin, kirill) va rus tilida.</span></li>
-      <li><span><b>Joylashuv avtomatik aniqlanadi</b>GPS, rasmdagi GPS yozuvi, yorliqdagi doʻkon nomi yoki oxirgi joylashuv. Aniq manzil saqlanmaydi: ~100 m aniqlik.</span></li>
-      <li><span><b>Avtomatik sifat nazorati</b>Gʻayrioddiy narx, takroriy xabar, ekran surati va boshqa xabarlardan keskin farq (robust z-ball) rad etiladi.</span></li>
-      <li><span><b>Rasmiy narx bilan solishtiriladi</b>narx.stat.uz viloyat oʻrtachasi, narxtahlil.uz supermarket narxlari yoki xaridorlar medianasi.</span></li>
-      <li><span><b>Indeks va ogohlantirishlar yangilanadi</b>Savat indeksi, narx sakrashlari, soxta chegirmalar.</span></li>
-    </ol>
-  </section>
-  <section class="card">
-    <h2>Bu maʼlumot kimga kerak</h2>
-    <ul class="uses">
-      <li><span class="ic">1</span><b>Haftalik inflyatsiya “nowcast”i</b><span class="who">Markaziy bank, Statistika agentligi</span><span style="grid-column:2">Rasmiy INI oy oxirida chiqadi; xalq indeksi narx oʻzgarishini bir necha kun ichida koʻrsatadi.</span></li>
-      <li><span class="ic">2</span><b>Til biriktirish va monopol narxni aniqlash</b><span class="who">Raqobat qoʻmitasi</span><span style="grid-column:2">Bir hududdagi sotuvchilar (masalan, zapravkalar) bir vaqtda narx oshirsa yoki narxlar bir xillashsa, signal beriladi.</span></li>
-      <li><span class="ic">3</span><b>Soxta chegirmalar boʻyicha dalil</b><span class="who">Isteʼmolchilar huquqlarini himoya qilish</span><span style="grid-column:2">Har bir aksiya rasm, sana va joy bilan saqlanadi: tekshiruv uchun tayyor dalil.</span></li>
-      <li><span class="ic">4</span><b>Bayram oldi narx nazorati</b><span class="who">Hokimliklar</span><span style="grid-column:2">Navroʻz, Ramazon va Yangi yil oldidan qaysi mahsulot qayerda sakraganini darhol koʻrsatadi.</span></li>
-      <li><span class="ic">5</span><b>Bozor tahlili</b><span class="who">Savdo tarmoqlari, ishlab chiqaruvchilar, banklar</span><span style="grid-column:2">Hududlar va kanallar kesimida narx, raqobatchilar narxi va talab signallari.</span></li>
-      <li><span class="ic">6</span><b>Boj va kvota taʼsirini oʻlchash</b><span class="who">Tadqiqotchilar, Iqtisodiyot va moliya vazirligi</span><span style="grid-column:2">Import tariflari chakana narxga qancha tez va qancha toʻliq oʻtishini haftalik maʼlumotda kuzatish.</span></li>
-    </ul>
-  </section>
-  <section class="card">
-    <h2>Soʻnggi xabarlar</h2>
-    ${all.length ? `<div class="tbwrap"><table class="tb"><thead><tr><th>Vaqt</th><th>Mahsulot</th><th class="r">Narx</th><th>Joy</th><th>Holat</th></tr></thead><tbody>${all.slice(0, 15).map(x => `<tr><td class="num">${new Date(x.t).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td>${esc(P[x.c].n)}</td><td class="r num">${fmt(x.up)}</td><td>${esc(locLine(x.loc))}</td><td>${accepted(x) ? "qabul" : "rad"}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Hali xabar yoʻq</div>`}
-  </section>
-  <section class="card">
-    <h2>Manbalar</h2>
-    <ul class="checks">
-      <li class="ok">${IC.ok}<span><a href="https://narx.stat.uz/prices">narx.stat.uz</a>: 30 mahsulotning respublika va 14 hudud boʻyicha oʻrtacha narxi, ${dfull(REF.week)} kuzatuvi; namunaviy savat miqdorlari. ${CAP.refFromDb ? "Serverdan yangilangan." : `Ilovaga ${dfull(REF.fetched)} da yuklangan.`}</span></li>
-      <li class="ok">${IC.ok}<span><a href="https://narxtahlil.uz/supermarkets/">narxtahlil.uz</a>: Baraka, Havas, Korzinka, Magnit, Makro, Olma narxlari (${esc(REF.smNote)}).</span></li>
-      <li class="ok">${IC.ok}<span>Xalq narxlari: ${REF.products.filter(p => p.k === "x").length} ta mahsulot (sut mahsulotlari, gigiena, yoqilgʻi va boshqalar) faqat xaridorlar xabarlaridan, algoritmik tekshiruv bilan.</span></li>
-    </ul>
+    ${own.length ? "" : `<button class="btn" data-act="1">${IC.cam} Birinchi narxni yuborish</button>`}
   </section>
   <section class="card">
     <h2>Sozlamalar</h2>
-    <button class="btn2" id="m-loc">${IC.pin} Joylashuvni qayta aniqlash</button>
+    <button class="btn2" id="m-loc">${IC.pin} Joylashuv: ${esc(locLine(LOC))}</button>
     ${NP("LocalNotifications") ? `<button class="btn2" id="m-remind">${IC.bell} ${LS.get("nr-remind", 0) ? "Haftalik eslatmani oʻchirish" : "Har dushanba narx eslatmasi"}</button>` : ""}
-    <button class="btn2" id="m-test">${IC.spark} AI ulanishini tekshirish</button>
+    <button class="btn2" id="m-test">${IC.spark} Server ulanishini tekshirish</button>
     <div id="m-test-out"></div>
     <button class="btn2" id="m-clear">Shu telefondagi xabarlarni oʻchirish</button>
+  </section>
+  <section class="card">
+    <h2>Ilova haqida</h2>
+    <p class="sub" style="margin:0">NarxRadar narx yorligʻini oʻqiydi va narxni rasmiy statistika (narx.stat.uz), supermarket narxlari (narxtahlil.uz) hamda xaridorlar xabarlari bilan solishtiradi. Baholarni hech kim qoʻlda oʻzgartirmaydi.</p>
+    <details class="more"><summary>Qanday ishlaydi</summary>
+      <ol class="pipe">
+        <li><span><b>Siz yorliqni suratga olasiz yoki narxni yozasiz</b>Roʻyxatdan oʻtish shart emas.</span></li>
+        <li><span><b>Ilova mahsulot va narxni oʻqiydi</b>Oʻzbek (lotin, kirill) va rus tilidagi yorliqlar.</span></li>
+        <li><span><b>Joy aniqlanadi</b>Telefon joylashuvi yoki yorliqdagi doʻkon nomi orqali. Aniq manzil saqlanmaydi.</span></li>
+        <li><span><b>Narx solishtiriladi</b>Rasmiy narx, supermarketlar va boshqa xaridorlar narxi bilan.</span></li>
+        <li><span><b>Shubhali xabarlar chetlatiladi</b>Juda past, juda yuqori yoki takroriy narxlar umumiy hisobga kirmaydi.</span></li>
+      </ol>
+    </details>
     <a class="btn2" href="privacy.html">Maxfiylik siyosati</a>
-    <div class="kv"><span>AI</span><b>${CAP.sample ? "yoqilgan (rasm va matn)" : "server ulanmagan"}</b></div>
-    <div class="kv"><span>Joylashuv</span><b>${GEO === "ruxsat" ? "GPS ruxsat berilgan" : GEO === "sinalmagan" ? "hali soʻralmagan" : "rasm va yozuvdan"}</b></div>
-    <div class="kv"><span>Versiya</span><b>ilova ${APP_VERSION}${CAP.srv ? " · server " + esc(CAP.srv) : ""}${NATIVE ? " · telefon ilovasi" : ""}</b></div>
-  </section>`;
-  $("#m-csv").style.display = CAP.dl && !NATIVE ? "" : "none";
+    <div class="kv"><span>Rasm tahlili</span><b>${CAP.sample ? "ishlaydi" : "hozircha ulanmagan"}</b></div>
+    <div class="kv"><span>Joylashuv</span><b>${GEO === "ruxsat" ? "ruxsat berilgan" : GEO === "sinalmagan" ? "hali soʻralmagan" : "yorliq va yozuvdan"}</b></div>
+    <button class="kv kvbtn" id="m-ver"><span>Versiya</span><b>${APP_VERSION}${adm ? " · ishlab chiquvchi rejimi" : ""}</b></button>
+  </section>
+  ${adm ? adminHTML(all) : ""}`;
+  wire("#v-malumot [data-act]", b => b.onclick = () => openAct());
+  wireUpd();
+  const ver = $("#m-ver"); ver.onclick = () => {
+    const now = Date.now(); renderData.taps = (renderData.taps || []).filter(t => now - t < 4000); renderData.taps.push(now);
+    if (renderData.taps.length >= 7) { renderData.taps = []; const on = !ADMIN(); LS.set("nr-admin", on ? 1 : 0); toast(on ? "Ishlab chiquvchi rejimi yoqildi." : "Ishlab chiquvchi rejimi oʻchirildi."); renderData(); }
+  };
   const rb = $("#m-remind"); if (rb) rb.onclick = async () => {
     const N = NP("LocalNotifications");
     try {
@@ -1262,17 +1322,54 @@ function renderData() {
     renderData();
   };
   $("#m-test").onclick = async () => {
-    const out = $("#m-test-out"); out.innerHTML = `<p class="sub">Sinov rasmi AI ga yuborilmoqda… (10–30 soniya)</p>`;
-    try {
-      let j; try { j = await api("/selftest?img=1", undefined, 70000, AI_BASE); } catch (e) { if (e.code !== "unavailable") throw e; j = await api("/selftest?img=1", undefined, 20000, API); }
-      const it = j.result && j.result.items && j.result.items[0];
-      out.innerHTML = j.ok && it ? `<div class="ai"><b>AI ishlayapti</b>Rasmdan oʻqildi: “${esc(it.product_text)}” — ${fmt(it.price_uzs)} soʻm. Model: ${esc(j.model || "?")}, ${dec((j.ms || 0) / 1000, 1)} soniya.</div>` : `<p class="note warn">AI javob bermadi: ${esc(j.error || "nomaʼlum xato")}</p>`;
-    } catch (e) { out.innerHTML = `<p class="note warn">${esc(aiErr(e))}</p>`; }
+    /* Faqat ulanish tekshiruvi: rasm tahlili limitini sarflamaydi */
+    const out = $("#m-test-out"); out.innerHTML = `<div class="status"><span class="spin"></span><div>Server tekshirilmoqda…</div></div>`;
+    const t0 = Date.now();
+    let edge = null, node = null;
+    try { edge = await api("/health", undefined, 10000, AI_BASE); } catch (e) { edge = null; }
+    try { node = await api("/health", undefined, 10000, API); } catch (e) { node = null; }
+    const sec = dec((Date.now() - t0) / 1000, 1);
+    const ai = (edge && edge.ai) || (node && node.ai);
+    if ((edge || node) && ai) out.innerHTML = `<div class="ai"><b>Hammasi ishlayapti</b>Server ulangan, rasm va matn tahlil qilinadi. Javob: ${sec} soniya.</div>`;
+    else if (edge || node) out.innerHTML = `<p class="note warn">Server ishlayapti, lekin rasm tahlili ulanmagan. Narxni yozib yuborish ishlaydi.</p>`;
+    else out.innerHTML = `<p class="note warn">Serverga ulanib boʻlmadi. Internetni tekshiring; ilova oflayn rejimda ishlashda davom etadi.</p>`;
   };
-  $("#m-csv").onclick = async () => { try { await CAP.dl.save({ filename: `narxradar-${new Date().toISOString().slice(0, 10)}.csv`, data: toCSV() }); } catch (e) { toast("Yuklab olish bekor qilindi."); } };
-  $("#m-copy").onclick = async () => { try { await navigator.clipboard.writeText(toCSV()); toast("CSV nusxalandi."); } catch (e) { toast("Nusxalash bloklandi."); } };
   $("#m-loc").onclick = () => openLocSheet(true);
   $("#m-clear").onclick = () => { if (!confirm("Shu telefondagi barcha xabarlar oʻchirilsinmi?")) return; LOCAL = []; LS.set("nr-local", []); allReset(); toast("Shu telefondagi xabarlar oʻchirildi."); renderData(); };
+  if (adm) wireAdmin();
+}
+/* Ishlab chiquvchi rejimi: Versiya qatorini 4 soniyada 7 marta bosing */
+function adminHTML(all) {
+  const acc = all.filter(accepted), photo = all.filter(x => x.src === "rasm").length;
+  const regs = new Set(all.map(x => x.loc && x.loc.r).filter(Boolean)), prodsCovered = new Set(acc.map(x => x.c)).size;
+  return `<section class="card adm">
+    <h2>Ishlab chiquvchi uchun</h2>
+    <div class="tiles">
+      <div class="tile"><b class="num">${all.length}</b><span>Jami xabar (baza)</span></div>
+      <div class="tile"><b class="num">${all.length ? Math.round(acc.length / all.length * 100) : 0}%</b><span>Qabul qilingan</span></div>
+      <div class="tile"><b class="num">${all.length ? Math.round(photo / all.length * 100) : 0}%</b><span>Rasm orqali</span></div>
+      <div class="tile"><b class="num">${regs.size}/14</b><span>Hudud qamrovi</span></div>
+      <div class="tile"><b class="num">${prodsCovered}/${REF.products.length}</b><span>Xabar bor mahsulotlar</span></div>
+      <div class="tile"><b class="num">${CAP.srv ? esc(CAP.srv) : "—"}</b><span>Server versiyasi</span></div>
+    </div>
+    <div class="row2"><button class="btn2" id="m-csv">${IC.dl} CSV</button><button class="btn2" id="m-copy">CSV nusxalash</button></div>
+    ${all.length ? `<div class="tbwrap"><table class="tb"><thead><tr><th>Vaqt</th><th>Mahsulot</th><th class="r">Narx</th><th>Joy</th><th>Holat</th></tr></thead><tbody>${all.slice(0, 15).map(x => `<tr><td class="num">${new Date(x.t).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td>${esc(P[x.c].n)}</td><td class="r num">${fmt(x.up)}</td><td>${esc(locLine(x.loc))}</td><td>${accepted(x) ? "qabul" : "rad"}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    <h3>Bu maʼlumot kimga kerak</h3>
+    <ul class="uses">
+      <li><span class="ic">1</span><b>Haftalik inflyatsiya “nowcast”i</b><span class="who">Markaziy bank, Statistika agentligi</span><span style="grid-column:2">Rasmiy INI oy oxirida chiqadi; xalq indeksi narx oʻzgarishini bir necha kun ichida koʻrsatadi.</span></li>
+      <li><span class="ic">2</span><b>Til biriktirish va monopol narxni aniqlash</b><span class="who">Raqobat qoʻmitasi</span><span style="grid-column:2">Bir hududdagi sotuvchilar bir vaqtda narx oshirsa yoki narxlar bir xillashsa, signal beriladi.</span></li>
+      <li><span class="ic">3</span><b>Soxta chegirmalar boʻyicha dalil</b><span class="who">Isteʼmolchilar huquqlarini himoya qilish</span><span style="grid-column:2">Har bir aksiya sana va joy bilan saqlanadi.</span></li>
+      <li><span class="ic">4</span><b>Bayram oldi narx nazorati</b><span class="who">Hokimliklar</span><span style="grid-column:2">Navroʻz, Ramazon va Yangi yil oldidan qaysi mahsulot qayerda sakraganini koʻrsatadi.</span></li>
+      <li><span class="ic">5</span><b>Bozor tahlili</b><span class="who">Savdo tarmoqlari, ishlab chiqaruvchilar, banklar</span><span style="grid-column:2">Hududlar va kanallar kesimida narx va raqobatchilar narxi.</span></li>
+    </ul>
+    <p class="sub">Rasmiy maʼlumot: ${dfull(REF.week)} kuzatuvi. ${CAP.refFromDb ? "Serverdan yangilangan." : `Ilovaga ${dfull(REF.fetched)} da yuklangan.`} Supermarketlar: ${esc(REF.smNote)}.</p>
+    <button class="btn2" id="m-adm-off">Ishlab chiquvchi rejimini oʻchirish</button>
+  </section>`;
+}
+function wireAdmin() {
+  const csv = $("#m-csv"); if (csv) { csv.style.display = CAP.dl && !NATIVE ? "" : "none"; csv.onclick = async () => { try { await CAP.dl.save({ filename: `narxradar-${new Date().toISOString().slice(0, 10)}.csv`, data: toCSV() }); } catch (e) { toast("Yuklab olish bekor qilindi."); } }; }
+  const cp = $("#m-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(toCSV()); toast("CSV nusxalandi."); } catch (e) { toast("Nusxalash bloklandi."); } };
+  const off = $("#m-adm-off"); if (off) off.onclick = () => { LS.set("nr-admin", 0); renderData(); };
 }
 function toCSV() {
   const rows = [["vaqt", "hafta", "kod", "mahsulot", "manba_turi", "yozilgan_nom", "narx", "qadoq", "birlik_narxi", "birlik", "eski_narx", "manba", "ai_ishonchi", "viloyat", "joy", "joy_turi", "joylashuv_usuli", "kenglik", "uzunlik", "baho", "farq", "chegirma_bahosi", "qabul", "ogirlik"]];
@@ -1282,16 +1379,16 @@ function toCSV() {
 
 /* ============ Oyna (sheet) va pastki menyu ============ */
 let SHEET_LOCK = false;
-function openSheet(title, html) { closeAct(); $("#sheet-title").textContent = title; $("#sheet-body").innerHTML = html; $("#sheet").classList.add("open"); $("#sheet-body").scrollTop = 0; setTimeout(() => $("#sheet-close").focus(), 50); }
+function openSheet(title, html) { closeAct(); $("#sheet-body").oninput = null; $("#sheet-body").onchange = null; $("#sheet-title").textContent = title; $("#sheet-body").innerHTML = html; $("#sheet").classList.add("open"); $("#sheet-body").scrollTop = 0; setTimeout(() => $("#sheet-close").focus(), 50); }
 function closeSheet() { $("#app").scrollTop = 0; $("#sheet").classList.remove("open"); SHEET_LOCK = false; render(TAB); }
 $("#sheet-close").onclick = closeSheet;
 function openAct() {
   const a = $("#act");
-  a.innerHTML = `<div class="grab"></div><h2>Narxni tekshirish</h2><p class="sub" style="margin-top:-6px">AI yorliqni oʻqiydi, joylashuv avtomatik qoʻshiladi va narx rasmiy maʼlumot bilan solishtiriladi.</p>
+  a.innerHTML = `<div class="grab"></div><h2>Narxni tekshirish</h2><p class="sub" style="margin-top:-6px">Yorliqni suratga oling yoki narxni yozing: joy va solishtirish avtomatik.</p>
   <button class="opt main" id="a-cam"><span class="oi">${IC.cam}</span><span><b>Rasmga olish</b><span>Narx yorligʻini suratga oling</span></span></button>
   <button class="opt" id="a-gal"><span class="oi" style="background:var(--cheap-soft);color:var(--cheap)">${IC.gal}</span><span><b>Galereyadan tanlash</b><span>Oldin olingan surat</span></span></button>
   <button class="opt" id="a-write"><span class="oi" style="background:var(--brand-soft);color:var(--brand)">${IC.pen}</span><span><b>Yozib yuborish</b><span>Masalan: “mol goʻshti 132 000”</span></span></button>
-  <button class="opt" id="a-demo"><span class="oi" style="background:var(--new-soft);color:var(--new)">${IC.play}</span><span><b>Namuna bilan sinash</b><span>Tayyor yorliq bilan qanday ishlashini koʻring</span></span></button>`;
+  <button class="opt" id="a-demo"><span class="oi" style="background:var(--new-soft);color:var(--new)">${IC.play}</span><span><b>Qanday ishlashini koʻrish</b><span>Namunaviy yorliq bilan sinab koʻring</span></span></button>`;
   a.classList.add("open"); a.setAttribute("aria-hidden", "false"); $("#scrim").classList.add("open");
   $("#a-cam").onclick = () => { closeAct(); pickPhoto("narx", true); };
   $("#a-gal").onclick = () => { closeAct(); pickPhoto("narx", false); };
@@ -1308,11 +1405,11 @@ document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (
 function regionGrid(sel) { return `<div class="regiongrid">${REGIONS.map(x => `<button data-r="${x.c}" aria-pressed="${x.c === sel}">${esc(x.s)}</button>`).join("")}</div>`; }
 function openLocSheet(tryGps) {
   const body = () => `
-  <section class="card"><h3>Hozirgi joylashuv</h3><p style="margin:0;font-weight:800;font-size:17px">${esc(locLine(LOC))}</p><p class="sub">${LOC ? "Usul: " + (LOCM[LOC.m] || LOC.m) + (LOC.la ? ` · ${LOC.la}, ${LOC.lo}` : "") : "Hali aniqlanmagan"}</p>
+  <section class="card"><h3>Hozirgi joylashuv</h3><p style="margin:0;font-weight:800;font-size:17px">${esc(locLine(LOC))}</p><p class="sub">${LOC ? "Aniqlangan: " + (LOCM[LOC.m] || LOC.m) : "Hali aniqlanmagan"}</p>
   <button class="btn" id="l-gps">${IC.pin} GPS orqali aniqlash</button><p class="sub" id="l-msg"></p></section>
   <section class="card"><h3>Viloyatni tanlash</h3><p class="sub">GPS ishlamasa, bir marta tanlang. Bozor yoki doʻkon nomi yorliqdan va yozuvdan avtomatik aniqlanadi.</p>${regionGrid(LOC && LOC.r)}</section>
-  <section class="card"><h3>Sinov uchun GPS nuqtasi</h3><p class="sub">Taqdimotda avtomatik aniqlashni koʻrsatish uchun: tayyor koordinata xuddi GPS kabi qayta ishlanadi.</p>
-  <div class="chips"><button class="chip" data-t="41.3262,69.2351">Chorsu bozori yaqini</button><button class="chip" data-t="39.6605,66.9822">Siyob bozori yaqini</button><button class="chip" data-t="40.7700,72.3200">Andijon shahri</button></div></section>`;
+  ${ADMIN() ? `<section class="card adm"><h3>Sinov uchun GPS nuqtasi</h3><p class="sub">Taqdimotda avtomatik aniqlashni koʻrsatish uchun.</p>
+  <div class="chips"><button class="chip" data-t="41.3262,69.2351">Chorsu bozori yaqini</button><button class="chip" data-t="39.6605,66.9822">Siyob bozori yaqini</button><button class="chip" data-t="40.7700,72.3200">Andijon shahri</button></div></section>` : ""}`;
   openSheet("Joylashuv", body());
   const wireL = () => {
     $("#l-gps").onclick = async () => {
@@ -1355,7 +1452,7 @@ function openWrite(prefill = "", preC = null) {
     const c = chosen || pr.c, price = digits($("#w-p").value) || pr.price;
     if (c && P[c].cat === "yoqilgi" && ty !== "zapravka" && !(tp && tp.ty)) setTy("zapravka");
     if (pr.old && !disc) { disc = true; $("#w-disc").setAttribute("aria-pressed", "true"); $("#w-oldw").hidden = false; $("#w-old").value = pr.old; }
-    $("#w-parse").innerHTML = t.trim() || chosen ? `<span class="${c ? "ok" : "no"}">Mahsulot: ${c ? emo(c) + " " + esc(P[c].n) : "aniqlanmadi"}</span><span class="${price ? "ok" : "no"}">Narx: ${price ? fmt(price) + " soʻm" : "yoʻq"}</span>${pr.qty ? `<span class="ok">Miqdor: ${dec(pr.qty, pr.qty % 1 ? 2 : 0)} ${pr.qunit || ""}</span>` : ""}${tp && tp.pl ? `<span class="ok">Joy: ${esc(tp.pl)}</span>` : ""}` : "";
+    $("#w-parse").innerHTML = t.trim() || chosen ? `<span class="${c ? "ok" : "no"}">Mahsulot: ${c ? emo(c) + " " + esc(P[c].n) : "aniqlanmadi"}</span><span class="${price ? "ok" : "no"}">Narx: ${price ? fmt(price) + " soʻm" : "yoʻq"}</span>${pr.qty ? `<span class="ok">Miqdor: ${dec(pr.qty, pr.qty % 1 ? 2 : 0)} ${pr.qunit || ""}</span>` : ""}${tp && tp.pl ? `<span class="ok">Joy: ${esc(tp.pl)}</span>` : ""}${(() => { if (!c || !price) return ""; const q = baseQty(c, pr.qty, pr.qunit, price), pl = plausible(c, price / q, LOC && LOC.r); return pl ? `<span class="no">${pl.hi ? "Odatdagidan " + dec(pl.k, 1) + " baravar qimmat" : "Odatdagidan " + dec(1 / pl.k, 1) + " baravar arzon"}: raqam yoki qadoqni tekshiring (odatda ~${fmt(pl.b)} ${perU(c)})</span>` : ""; })()}` : "";
     $("#w-go").disabled = !(t.trim() || (chosen && price));
   };
   const choose = c => { chosen = c; wire("#w-chips [data-c]", x => x.setAttribute("aria-pressed", String(+x.dataset.c === chosen))); if (chosen && !POPULAR.includes(chosen)) $("#w-sel").value = String(chosen); else $("#w-sel").value = ""; upd(); };
@@ -1368,7 +1465,7 @@ function openWrite(prefill = "", preC = null) {
     let c = chosen || pr.c, price = digits($("#w-p").value) || pr.price, qty = pr.qty, qunit = pr.qunit, old = disc ? (digits($("#w-old").value) || pr.old) : null;
     const pt = t.trim() || (c ? P[c].n : "");
     if ((!c || !price) && CAP.sample && t.trim()) {
-      const go = $("#w-go"); go.disabled = true; go.textContent = "AI tushunmoqda…";
+      const go = $("#w-go"); go.disabled = true; go.textContent = "Tekshirilmoqda…";
       try { const a = await aiParseText(t); if (a) { if (!c && P[a.product_code]) c = +a.product_code; if (!c && a.product_text) c = matchProduct(a.product_text).c; if (!price && a.price_uzs) price = +a.price_uzs; if (!qty && a.pack_qty) { qty = +a.pack_qty; qunit = a.pack_unit; } if (!old && a.old_price_uzs) old = +a.old_price_uzs; } } catch (e) { }
       go.disabled = false; go.innerHTML = `${IC.shield} Tekshirish va yuborish`;
     }
@@ -1400,30 +1497,29 @@ async function shareText(title, text) {
   try { if (S) { await S.share({ title, text, dialogTitle: "Ulashish" }); return; } if (navigator.share) { await navigator.share({ title, text }); return; } await navigator.clipboard.writeText(text); toast("Matn nusxalandi: Telegram’ga joylashingiz mumkin."); }
   catch (e) { }
 }
-function stepsHTML(steps) { return `<div class="steps">${steps.map(s => `<div class="step ${s.st}"><span class="st">${s.st === "ok" ? IC.ok : s.st === "bad" ? IC.warn : ""}</span><span>${esc(s.l)}${s.d ? `<small>${esc(s.d)}</small>` : ""}</span></div>`).join("")}</div>`; }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function scanHTML(url, msg, sub, done) {
+  return `<div class="scanbox ${done ? "done" : ""}"><img src="${url}" alt="Yuborilgan narx yorligʻi"></div>${msg ? statusHTML(msg, sub) : ""}<div id="pf-extra" class="stack"></div>`;
+}
+const statusHTML = (msg, sub) => `<div class="status" aria-live="polite"><span class="spin"></span><div>${msg}${sub ? `<small>${sub}</small>` : ""}</div></div>`;
 
 async function photoFlow(file, kind, demo) {
   SHEET_LOCK = true;
   const url = URL.createObjectURL(file);
-  const S = [{ l: "AI rasmni oʻqiydi", st: "run", d: "Odatda 3–15 soniya" }, { l: "Joylashuv", st: "" }, { l: "Narx bilan solishtirish", st: "" }, { l: "Avtomatik tekshiruv", st: "" }];
-  const draw = () => { $("#sheet-body").innerHTML = `<img class="photo" src="${url}" alt="Yuborilgan narx yorligʻi">${stepsHTML(S)}<div id="pf-extra" style="display:flex;flex-direction:column;gap:14px"></div>`; };
-  openSheet(kind === "chegirma" ? "Chegirma tekshiruvi" : "Narx tekshiruvi", ""); draw();
-  let res = null, how = "AI", failErr = null;
-  if (CAP.sample && CAP.img) {
-    try { res = await aiReadPhoto(await shrink(file)); } catch (e) { res = null; failErr = e; S[0].d = aiErr(e); }
-  }
-  if (!res && demo) { res = demo; how = "namuna"; S[0].d = CAP.sample && CAP.img ? "AI javob bermadi: namunaviy yorliqning maʼlum qiymatlari ishlatildi" : "AI server ulanmagan: namunaviy yorliqning maʼlum qiymatlari ishlatildi"; }
-  else if (res && demo) how = "namuna-ai";
-  if (!res || !res.is_price_tag || !res.items || !res.items.length || !res.items[0].price_uzs) {
-    S[0].st = "bad"; S[0].d = failErr ? aiErr(failErr) : res ? "Rasmda oʻqiladigan narx topilmadi. Yorliqni yaqinroqdan, tekis va yorugʻ joyda suratga oling." : (CAP.db === null ? "Serverga ulanib boʻlmadi. Internetni tekshiring." : "AI server ulanmagan, shuning uchun rasmni oʻqib boʻlmaydi.");
-    draw();
-    $("#pf-extra").innerHTML = `<p class="note">Narxni yozib yuborishingiz mumkin: tekshiruv xuddi shunday avtomatik boʻladi.</p>${failErr && failErr.code !== "rate_limited" ? `<button class="btn" id="pf-retry">Qayta urinish</button>` : ""}<button class="${failErr && failErr.code !== "rate_limited" ? "btn2" : "btn"}" id="pf-write">${IC.pen} Yozib yuborish</button><button class="btn2" id="pf-again">${IC.cam} Qayta suratga olish</button>`;
+  openSheet(kind === "chegirma" ? "Chegirma tekshiruvi" : "Narx tekshiruvi", scanHTML(url, "Yorliq oʻqilmoqda…", "Odatda bir necha soniya"));
+  let res = null, failErr = null, src = "rasm";
+  const okRes = r => r && r.is_price_tag && r.items && r.items.length && r.items[0].price_uzs;
+  if (CAP.sample && CAP.img) { try { res = await aiReadPhoto(await shrink(file)); } catch (e) { res = null; failErr = e; } }
+  if (demo) { if (!okRes(res)) res = demo; src = "namuna"; }
+  if (!okRes(res)) {
+    const msg = failErr ? aiErr(failErr) : res ? "Rasmda narx topilmadi. Yorliqni yaqinroqdan, tekis va yorugʻ joyda suratga oling." : CAP.db === null ? "Serverga ulanib boʻlmadi. Internetni tekshiring." : "Rasm tahlili hozircha ishlamayapti. Narxni yozib yuborishingiz mumkin.";
+    const canRetry = failErr && failErr.code !== "rate_limited";
+    $("#sheet-body").innerHTML = scanHTML(url, "", "", true);
+    $("#pf-extra").innerHTML = `<p class="note warn">${esc(msg)}</p>${canRetry ? `<button class="btn" id="pf-retry">Qayta urinish</button>` : ""}<button class="${canRetry ? "btn2" : "btn"}" id="pf-write">${IC.pen} Yozib yuborish</button><button class="btn2" id="pf-again">${IC.cam} Qayta suratga olish</button>`;
     const rt = $("#pf-retry"); if (rt) rt.onclick = () => photoFlow(file, kind, demo);
     $("#pf-write").onclick = () => openWrite(); $("#pf-again").onclick = () => pickPhoto(kind, true);
     return;
   }
-  S[0].st = "ok"; S[0].d = (how === "namuna" ? S[0].d : `Oʻqildi: “${res.items.map(i => i.product_text).join(", ")}” · ishonch: ${({ high: "yuqori", medium: "oʻrtacha", low: "past" })[res.confidence] || "nomaʼlum"}`);
-  draw();
   const items = res.items.slice(0, 4).map(i => {
     let c = P[i.product_code] ? +i.product_code : matchProduct(i.product_text || "").c;
     const ptext = String(i.product_text || "");
@@ -1431,40 +1527,77 @@ async function photoFlow(file, kind, demo) {
     return { c, price: +i.price_uzs, qty: i.pack_qty ? +i.pack_qty : null, qunit: i.pack_unit, old: i.old_price_uzs ? +i.old_price_uzs : null, pt: ptext.slice(0, 80) };
   }).filter(i => i.c && i.price > 0);
   if (!items.length) {
-    S[0].st = "bad"; S[0].d = `“${res.items[0].product_text}” oʻqildi, lekin bu mahsulot hali ${REF.products.length} ta kuzatiladigan mahsulot qatorida yoʻq.`; draw();
-    $("#pf-extra").innerHTML = `<button class="btn" id="pf-write">${IC.pen} Roʻyxatdan tanlab yuborish</button>`; $("#pf-write").onclick = () => openWrite(String(res.items[0].product_text || "") + " " + (res.items[0].price_uzs || ""));
+    $("#sheet-body").innerHTML = scanHTML(url, "", "", true);
+    $("#pf-extra").innerHTML = `<p class="note warn">“${esc(res.items[0].product_text || "Mahsulot")}” oʻqildi, lekin bu mahsulot hali ${REF.products.length} ta kuzatiladigan mahsulot qatorida yoʻq.</p><button class="btn" id="pf-write">${IC.pen} Roʻyxatdan tanlab yuborish</button>`;
+    $("#pf-write").onclick = () => openWrite(String(res.items[0].product_text || "") + " " + (res.items[0].price_uzs || ""));
     return;
   }
-  submitFlow({ src: how.startsWith("namuna") ? "namuna" : "rasm", kind, items, file, store: res.store_name, aiType: res.place_type, conf: res.confidence, issue: res.photo_issue, steps: S, url, redraw: draw });
+  const go = (its, cf) => submitFlow({ src, kind, items: its, file, store: res.store_name, aiType: res.place_type, conf: res.confidence, issue: res.photo_issue, photo: url, cf });
+  confirmItems(url, items, go);
+}
+
+/* Tasdiqlash: oʻqilgan mahsulot, narx va qadoqni foydalanuvchi bir qarashda tekshiradi (narxlar aniqligining eng muhim bosqichi) */
+const qtyUnit = c => P[c].u === "10 dona" || P[c].u === "dona" ? "dona" : P[c].u === "m³" ? "m³" : unitTxt(P[c].u);
+function confirmItems(url, items, go) {
+  const row = (it, k) => `<div class="ci" data-i="${k}">
+      <label class="f">Mahsulot<select class="in" data-f="c">${productOptions(it.c)}</select></label>
+      <div class="row2"><label class="f">Narx, soʻm<input class="in num" data-f="price" inputmode="numeric" value="${fmt(it.price)}"></label>
+      <label class="f"><span data-qu>Qadoq, ${qtyUnit(it.c)}</span><input class="in num" data-f="qty" inputmode="decimal" placeholder="1" value="${it.qty ? dec(it.qty, it.qty % 1 ? 2 : 0) : ""}"></label></div>
+      ${it.old ? `<label class="f">Eski narx (chegirmagacha), soʻm<input class="in num" data-f="old" inputmode="numeric" value="${fmt(it.old)}"></label>` : ""}
+      <p class="warnline" data-w hidden></p>
+      ${items.length > 1 ? `<button class="linkbtn" data-rm="${k}">Bu qatorni olib tashlash</button>` : ""}
+    </div>`;
+  $("#sheet-body").innerHTML = `<img class="photo sm" src="${url}" alt="Yuborilgan narx yorligʻi"><section class="card confirm"><h3>Toʻgʻri oʻqildimi?</h3><p class="sub" style="margin:0">Bir qarab chiqing, xato boʻlsa tuzating: bu barcha foydalanuvchilar uchun narxlarni aniqroq qiladi.</p>${items.map(row).join("")}<button class="btn" id="cf-ok">${IC.ok} Toʻgʻri, tekshirish</button><button class="btn2" id="cf-cancel">Bekor qilish</button></section><div id="pf-extra" class="stack"></div>`;
+  const orig = JSON.stringify(items.map(i => [i.c, i.price, i.qty || null, i.old || null]));
+  const read = () => [...document.querySelectorAll("#sheet-body .ci")].map(el => {
+    const k = +el.dataset.i, f = n => el.querySelector(`[data-f="${n}"]`), c = +f("c").value, price = digits(f("price").value);
+    const qv = parseFloat(String(f("qty").value).replace(",", ".")), qty = qv > 0 ? qv : null, old = f("old") ? digits(f("old").value) || null : null;
+    return { el, it: { ...items[k], c, price, qty, qunit: qty ? (qtyUnit(c) === "dona" ? "dona" : qtyUnit(c) === "m³" ? null : P[c].u) : null, old: old && old > price ? old : null } };
+  });
+  const check = () => {
+    const okb = $("#cf-ok"); if (!okb) { $("#sheet-body").oninput = null; $("#sheet-body").onchange = null; return; }
+    let okAll = true;
+    for (const { el, it } of read()) {
+      const w = el.querySelector("[data-w]"), q = baseQty(it.c, it.qty, it.qunit, it.price), up = it.price && q ? it.price / q : 0;
+      el.querySelector("[data-qu]").textContent = `Qadoq, ${qtyUnit(it.c)}`;
+      if (!it.price) { w.hidden = false; w.textContent = "Narxni kiriting."; okAll = false; continue; }
+      const pl = plausible(it.c, up, LOC && LOC.r);
+      if (pl) { w.hidden = false; w.textContent = pl.hi ? `Bu ${P[it.c].n} uchun odatdagidan ${dec(pl.k, 1)} baravar qimmat (odatda ~${fmt(pl.b)} ${perU(it.c)}). Raqamni yoki qadoq hajmini tekshiring.` : `Bu odatdagidan ${dec(1 / pl.k, 1)} baravar arzon (odatda ~${fmt(pl.b)} ${perU(it.c)}). Raqamni yoki mahsulotni tekshiring.`; }
+      else w.hidden = true;
+    }
+    okb.disabled = !okAll;
+  };
+  $("#sheet-body").oninput = check; $("#sheet-body").onchange = check;
+  wire("#sheet-body [data-rm]", b => b.onclick = () => { items.splice(+b.dataset.rm, 1); confirmItems(url, items, go); });
+  $("#cf-cancel").onclick = () => closeSheet();
+  $("#cf-ok").onclick = () => { $("#sheet-body").oninput = null; $("#sheet-body").onchange = null; const its = read().map(x => x.it).filter(i => i.c && i.price > 0); if (!its.length) return; const edited = JSON.stringify(its.map(i => [i.c, i.price, i.qty || null, i.old || null])) !== orig; go(its, edited ? 2 : 1); };
+  check();
 }
 
 async function submitFlow(o) {
+  const title = o.kind === "chegirma" ? "Chegirma tekshiruvi" : "Narx tekshiruvi";
+  if (!o.photo) openSheet(title, "");
   SHEET_LOCK = true;
-  const S = o.steps || [{ l: "Matn tahlil qilindi", st: "ok", d: o.items.map(i => `${P[i.c].n} · ${fmt(i.price)} soʻm`).join(", ") }, { l: "Joylashuv", st: "" }, { l: "Narx bilan solishtirish", st: "" }, { l: "Avtomatik tekshiruv", st: "" }];
-  const draw = o.redraw || (() => { $("#sheet-body").innerHTML = `${stepsHTML(S)}<div id="pf-extra" style="display:flex;flex-direction:column;gap:14px"></div>`; });
-  if (!o.steps) openSheet(o.kind === "chegirma" ? "Chegirma tekshiruvi" : "Narx tekshiruvi", "");
-  S[1].st = "run"; draw();
+  const stage = (msg, sub) => { $("#sheet-body").innerHTML = o.photo ? scanHTML(o.photo, msg, sub) : statusHTML(msg, sub) + `<div id="pf-extra" class="stack"></div>`; };
+  stage("Joylashuv aniqlanmoqda…");
   let loc = await resolveLocation({ file: o.file, text: o.text, store: o.store, aiType: o.aiType });
   if (!loc) {
-    S[1].st = "bad"; S[1].d = "Avtomatik aniqlab boʻlmadi"; draw();
     const r = await new Promise(res => {
-      $("#pf-extra").innerHTML = `<section class="card"><h3>Qaysi hududdasiz?</h3><p class="sub">Bir marta tanlang, keyingi safar eslab qolinadi.</p>${regionGrid(null)}</section>`;
-      wire("#pf-extra [data-r]", b => b.onclick = () => res(b.dataset.r));
+      $("#sheet-body").innerHTML = `<section class="card"><h3>Qaysi hududdasiz?</h3><p class="sub">Joylashuvni avtomatik aniqlab boʻlmadi. Bir marta tanlang, keyingi safar eslab qolinadi.</p>${regionGrid(null)}</section>`;
+      wire("#sheet-body [data-r]", b => b.onclick = () => res(b.dataset.r));
     });
     loc = { la: null, lo: null, r, pl: null, ty: null, m: "tanlangan", ts: Date.now() }; saveLoc(loc);
     const tp = placeFromText([o.text, o.store].filter(Boolean).join(" ")); if (tp) { if (tp.pl) loc.pl = tp.pl; if (tp.ty) loc.ty = tp.ty; if (tp.chain) loc.chain = tp.chain; }
-    $("#pf-extra").innerHTML = "";
   }
   if (o.tyHint && (!loc.ty || o.src === "matn")) loc = { ...loc, ty: o.tyHint };
   if (!loc.ty) loc.ty = o.aiType || (o.items.every(i => P[i.c].cat === "yoqilgi") ? "zapravka" : "bozor");
   if (loc.ty !== "bozor" && loc.pl && !loc.chain && PLACES.some(x => x.n === loc.pl) && loc.plSrc !== "matn") loc = { ...loc, pl: null }; /* GPS bozor yonida, lekin xarid zapravka/doʻkonda */
-  S[1].st = "ok"; S[1].d = `${locLine(loc)} · ${LOCM[loc.m] || loc.m}${loc.via === "matn" && loc.m !== "matn" ? " + yozuvdan" : ""}`;
-  S[2].st = "run"; draw();
-  await new Promise(r => setTimeout(r, 250));
+  stage("Narx solishtirilmoqda…");
+  await sleep(260);
   const t = new Date(), wk = isoWeek(t), reps = [];
   for (const it of o.items) {
     const q = baseQty(it.c, it.qty, it.qunit, it.price), up = it.price / q;
-    const rep = { id: uid8(), t: t.toISOString(), wk, c: it.c, pt: it.pt, price: it.price, q: +q.toFixed(3), up: Math.round(up), old: it.old || null, src: o.src, conf: o.conf || null, issue: o.issue || null, loc: { r: loc.r, pl: loc.pl || null, chain: loc.chain || null, ty: loc.ty, m: loc.m, la: loc.la ?? null, lo: loc.lo ?? null } };
+    const rep = { id: uid8(), t: t.toISOString(), wk, a: contrib(it.c, wk), cf: o.cf || 0, c: it.c, pt: it.pt, price: it.price, q: +q.toFixed(3), up: Math.round(up), old: it.old || null, src: o.src, conf: o.conf || null, issue: o.issue || null, loc: { r: loc.r, pl: loc.pl || null, chain: loc.chain || null, ty: loc.ty, m: loc.m, la: loc.la ?? null, lo: loc.lo ?? null } };
     const v = priceVerdict(rep.c, rep.up, loc.r, loc.ty);
     rep.v = { lab: v.lab, g: +v.g.toFixed(4), b: v.bench ? Math.round(v.bench) : null, bl: v.benchLbl };
     let dv = null;
@@ -1472,14 +1605,10 @@ async function submitFlow(o) {
     rep.qa = quality(rep);
     reps.push({ rep, v, dv });
   }
-  S[2].st = "ok"; S[2].d = reps.map(({ rep, v }) => `${P[rep.c].n}: ${v.bench ? v.benchLbl + " " + fmt(v.bench) + " soʻm" : v.benchLbl}`).join("; ");
-  S[3].st = "run"; draw();
   const saved = [];
   for (const x of reps) saved.push(o.src === "namuna" ? "namuna" : await saveRep(x.rep));
   allReset();
-  S[3].st = reps.every(x => x.rep.qa.ok) ? "ok" : "bad";
-  S[3].d = reps.map(x => x.rep.qa.ok ? "qabul qilindi" : "indeksga kiritilmadi").join(", ") + (saved[0] === "baza" ? " · umumiy bazaga yozildi" : saved[0] === "qurilma" ? " · shu telefonda saqlandi" : " · namunaviy yorliq: bazaga yozilmadi");
-  draw();
+  $("#sheet-body").innerHTML = (o.photo ? `<img class="photo sm" src="${o.photo}" alt="Yuborilgan narx yorligʻi">` : "") + `<div id="pf-extra" class="stack"></div>`;
   showResult(reps, o, saved);
 }
 
@@ -1489,47 +1618,51 @@ function scaleHTML(up, v) {
   const X = x => clamp01((x - lo) / (hi - lo)) * 100;
   const seg = (a, b, col) => `<i style="width:${(X(b) - X(a)).toFixed(2)}%;background:${col}"></i>`;
   const xu = X(up), xb = X(v.bench);
-  return `<div class="scale" aria-label="Narx shkalasi"><div class="trk">${seg(lo, z1, "var(--cheap)")}${seg(z1, z2, "var(--good)")}${seg(z2, z3, "var(--warn)")}${seg(z3, hi, "var(--crit)")}</div>
+  return `<div class="scale" aria-label="Narx shkalasi: arzon, adolatli, qimmat, juda qimmat"><div class="trk">${seg(lo, z1, "var(--cheap)")}${seg(z1, z2, "var(--good)")}${seg(z2, z3, "var(--warn)")}${seg(z3, hi, "var(--crit)")}</div>
   <div class="mk" style="left:${Math.min(92, Math.max(8, xu)).toFixed(1)}%"><span class="num">Siz: ${fmt(up)}</span><span class="dot" style="position:absolute;top:22px;left:50%;transform:translateX(-50%);margin:0"></span></div>
   <div class="mk b" style="left:${Math.min(92, Math.max(8, xb)).toFixed(1)}%"><span class="num">odatiy: ${fmt(v.bench)}</span><span class="tick"></span></div></div>`;
 }
+const DSUM = { haqiqiy: "Chegirma haqiqiy: narx odatdagidan haqiqatan past.", chalgituvchi: "Chegirma boʻrttirilgan: haqiqiy foyda eʼlon qilinganidan kam.", soxta: "Chegirma shubhali: “eski narx” sunʼiy oshirilgan boʻlishi mumkin.", nomalum: "Solishtirish uchun maʼlumot hali yetarli emas." };
 function showResult(reps, o, saved) {
   const html = reps.map(({ rep, v, dv }, k) => {
     const p = P[rep.c], vals = [rep.up, v.bench || 0, v.rep || 0, v.cr.n ? v.cr.med : 0, v.sm ? v.sm.max : 0], mx = Math.max(...vals);
     const barRow = (l, val, cls = "") => `<div class="bar ${cls}"><span>${l}</span><div class="track"><div class="fill" style="width:${(val / mx * 100).toFixed(1)}%"></div></div><span class="v num">${fmt(val)}</span></div>`;
-    const sentence = v.lab === "yangi" ? `Bu mahsulot uchun rasmiy narx eʼlon qilinmaydi va xaridorlar xabarlari hali kam (${v.crAll.n} ta). Xabaringiz bazaga qoʻshildi: 3 ta xabar yigʻilgach, narx avtomatik baholanadi.`
-      : v.lab === "arzon" ? `Bu narx ${v.benchLbl}dan ${pct(-v.g, 0)} arzon. Yaxshi narx.` : v.lab === "adolatli" ? `Bu narx ${v.benchLbl}ga yaqin (${pct(v.g, 0)}). Odatiy oraliqda.` : v.lab === "qimmat" ? `Bu narx ${v.benchLbl}dan ${pct(v.g, 0)} qimmat. Boshqa rastani yoki doʻkonni koʻrib chiqing.` : `Bu narx ${v.benchLbl}dan ${pct(v.g, 0)} qimmat. Xavf signali sifatida tahlilga yuborildi.`;
+    const sentence = v.lab === "yangi" ? `Bu mahsulot uchun rasmiy narx eʼlon qilinmaydi va boshqa xaridorlar xabari hali kam. Xabaringiz qoʻshildi: yana bir nechta xabar yigʻilgach, narx avtomatik baholanadi.`
+      : v.lab === "arzon" ? `Bu narx ${v.benchLbl}dan ${pct(-v.g, 0)} arzon. Yaxshi narx.` : v.lab === "adolatli" ? `Bu narx ${v.benchLbl}ga yaqin (${pct(v.g, 0)}). Odatiy oraliqda.` : v.lab === "qimmat" ? `Bu narx ${v.benchLbl}dan ${pct(v.g, 0)} qimmat. Boshqa rasta yoki doʻkonni koʻrib chiqing.` : `Bu narx ${v.benchLbl}dan ${pct(v.g, 0)} qimmat. Boshqa joyda ancha arzon topish mumkin.`;
+    const flag = x => x.max < 100 && x.pts / x.max >= .3;
+    const reasons = dv && dv.lab !== "nomalum" ? dv.parts.filter(x => !x.hide).map(x => `<li class="${flag(x) ? "no" : "ok"}">${flag(x) ? IC.warn : IC.ok}<span>${esc(x.tx)}</span></li>`).join("") : "";
     return `<section class="vcard ${dv ? dv.lab : v.lab}">
       <div style="display:flex;gap:12px;align-items:center">${av(rep.c)}<div style="min-width:0"><h2 style="font-size:18px">${esc(p.n)}</h2><p class="sub">${esc(locLine({ ...rep.loc }))}${rep.loc.ty ? " · " + (TYL[rep.loc.ty] || rep.loc.ty) : ""}</p></div></div>
       <div class="big num">${fmt(rep.up)} <span class="unit">${perU(rep.c)}</span></div>
-      ${rep.q !== 1 ? `<p class="sub">Yorliqda ${fmt(rep.price)} soʻm, ${dec(rep.q * (p.u === "10 dona" ? 10 : 1), rep.q % 1 && p.u !== "10 dona" ? 2 : 0)} ${p.u === "10 dona" ? "dona" : unitTxt(p.u)} uchun → bir ${p.u === "10 dona" ? "oʻnlik" : unitTxt(p.u)} narxi hisoblandi.</p>` : ""}
+      ${rep.q !== 1 ? `<p class="sub">Yorliqda ${fmt(rep.price)} soʻm, ${dec(rep.q * (p.u === "10 dona" ? 10 : 1), rep.q % 1 && p.u !== "10 dona" ? 2 : 0)} ${p.u === "10 dona" ? "dona" : unitTxt(p.u)} uchun: bir ${p.u === "10 dona" ? "oʻnlik" : unitTxt(p.u)} narxi hisoblandi.</p>` : ""}
       <div>${pill(v.lab, "lg")}</div>
       <p style="margin:0;font-size:15px">${sentence}</p>
       ${scaleHTML(rep.up, v)}
-      <div class="cmp">${barRow("Siz yuborgan", rep.up, "you me")}${v.reg ? barRow(esc(RG[rep.loc.r].s) + " oʻrt.", v.reg) : ""}${v.rep && p.k === "r" ? barRow("Respublika oʻrt.", v.rep) : ""}${v.sm ? barRow("Supermarket (max)", v.sm.max) : ""}${v.cr.n ? barRow(`Xaridorlar (${v.cr.n})`, v.cr.med) : ""}</div>
-      ${dv ? `<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px"><h3>Chegirma: ${fmt(rep.old)} → ${fmt(rep.price)} soʻm (eʼlon −${Math.round(dv.claim * 100)}%)</h3><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${pill(dv.lab, "lg")}${dv.lab !== "nomalum" ? `<b class="num">${dv.score}/100 xavf</b>` : ""}</div>${dv.lab !== "nomalum" ? `<div class="meter"><i style="width:${dv.score}%;background:${dv.lab === "soxta" ? "var(--crit)" : dv.lab === "chalgituvchi" ? "var(--warn)" : "var(--good)"}"></i></div>` : ""}<div class="why">${dv.parts.map(x => `<div class="w"><b>${esc(x.l)}</b>${x.max < 100 ? `<span class="pts num">${Math.round(x.pts)}/${x.max}</span>` : "<span></span>"}<span class="tx">${esc(x.tx)}</span>${x.max < 100 ? `<div class="pb"><i style="width:${(x.pts / x.max * 100).toFixed(0)}%"></i></div>` : ""}</div>`).join("")}</div></div>` : ""}
-      <ul class="checks">${rep.qa.why.length ? rep.qa.why.map(w => `<li class="no">${IC.warn}<span>${esc(w)}</span></li>`).join("") : `<li class="ok">${IC.ok}<span>Sifat nazoratidan oʻtdi: narx real oraliqda, takror emas, joylashuv bor.</span></li>`}</ul>
-      <div class="row2"><button class="btn2" data-share="${k}">${IC.share} Ulashish</button>${CAP.sample ? `<button class="btn2" data-ai="${k}">${IC.spark} AI izohi</button>` : `<span></span>`}</div>
+      <div class="cmp">${barRow("Siz yuborgan", rep.up, "you me")}${v.reg ? barRow(esc(RG[rep.loc.r].s) + " oʻrt.", v.reg) : ""}${v.rep && p.k === "r" ? barRow("Oʻzbekiston oʻrt.", v.rep) : ""}${v.sm ? barRow("Supermarketda eng yuqori", v.sm.max) : ""}${v.cr.n ? barRow(`Xaridorlar narxi`, v.cr.med) : ""}</div>
+      ${dv ? `<div class="dsc"><h3>Chegirma: ${fmt(rep.old)} → ${fmt(rep.price)} soʻm <span class="muted">(−${Math.round(dv.claim * 100)}%)</span></h3><div>${pill(dv.lab, "lg")}</div><p style="margin:0">${DSUM[dv.lab]}</p>${reasons ? `<details class="more" ${dv.lab !== "haqiqiy" ? "open" : ""}><summary>Nega shunday baho?</summary><ul class="checks">${reasons}</ul></details>` : ""}</div>` : ""}
+      ${rep.qa.ok || o.src === "namuna" ? "" : `<p class="note warn">Bu narx odatdagidan juda farq qiladi yoki takroriy, shuning uchun umumiy hisobga qoʻshilmadi. Xato boʻlsa, qayta yuboring.</p>`}
+      <div class="row2"><button class="btn2" data-share="${k}">${IC.share} Ulashish</button>${CAP.sample ? `<button class="btn2" data-ai="${k}">${IC.spark} Batafsil izoh</button>` : `<span></span>`}</div>
       <div id="ai-${k}"></div>
     </section>`;
   }).join("");
-  $("#pf-extra").innerHTML = html + `<div class="row2"><button class="btn" id="r-again">${o.src === "matn" ? IC.pen : IC.cam} Yana yuborish</button><button class="btn2" id="r-home">Tayyor</button></div>
-  ${saved[0] === "qurilma" ? `<p class="note">Xabar shu telefonda saqlandi${CAP.db ? ": internet qaytganda serverga avtomatik yuboriladi" : ": umumiy baza uchun server ulanmagan"}. Indeks va tarix uchun baribir ishlatiladi.</p>` : ""}`;
+  $("#pf-extra").innerHTML = html + `<button class="btn" id="r-again">${o.src === "matn" ? IC.pen : IC.cam} Yana narx tekshirish</button><button class="btn2" id="r-home">Tayyor</button>
+  ${o.src === "namuna" ? `<p class="note">Bu namunaviy yorliq: natija umumiy hisobga yozilmadi.</p>` : saved[0] === "qurilma" ? `<p class="note">Xabar shu telefonda saqlandi${CAP.db ? ": internet qaytganda avtomatik yuboriladi" : ""}.</p>` : ""}`;
   $("#r-again").onclick = () => o.src === "matn" ? openWrite() : pickPhoto(o.kind, true);
   $("#r-home").onclick = () => { closeSheet(); setTab(o.kind === "chegirma" ? "chegirma" : "asosiy"); };
   wire("#pf-extra [data-share]", b => b.onclick = () => {
     const { rep, v, dv } = reps[+b.dataset.share];
-    const t = `NarxRadar: ${P[rep.c].n} ${fmt(rep.up)} ${perU(rep.c)} (${locLine(rep.loc)}): ${VL[v.lab]}${v.bench ? `, ${v.benchLbl} ${fmt(v.bench)} soʻm (${pct(v.g, 0)})` : ""}.` + (dv ? ` Chegirma: ${VL[dv.lab]}${dv.lab !== "nomalum" ? ` (${dv.score}/100 xavf)` : ""}.` : "");
+    const t = `NarxRadar: ${P[rep.c].n} ${fmt(rep.up)} ${perU(rep.c)} (${locLine(rep.loc)}): ${VL[v.lab]}${v.bench ? `, ${v.benchLbl} ${fmt(v.bench)} soʻm (${pct(v.g, 0)})` : ""}.` + (dv ? ` Chegirma: ${VL[dv.lab]}.` : "");
     shareText("NarxRadar", t);
   });
   wire("#pf-extra [data-ai]", b => b.onclick = async () => {
     const { rep, v, dv } = reps[+b.dataset.ai], box = $("#ai-" + b.dataset.ai);
-    box.innerHTML = `<p class="sub">AI yozmoqda…</p>`;
-    const ctx = { mahsulot: P[rep.c].n, narx: rep.up, birlik: P[rep.c].u, joy: locLine(rep.loc), joy_turi: rep.loc.ty, solishtirma: v.benchLbl, solishtirma_narx: v.bench ? Math.round(v.bench) : null, farq: v.bench ? pct(v.g) : null, baho: VL[v.lab], respublika: v.rep, xaridorlar_medianasi: v.cr.n ? Math.round(v.cr.med) : null, chegirma: dv ? { eski: Math.round(rep.old), yangi: rep.price, baho: VL[dv.lab], xavf: dv.score, sabablar: dv.parts.filter(x => x.pts > 0).map(x => x.tx) } : null };
-    try { const tx = await aiExplain("price", ctx); box.innerHTML = `<div class="ai"><b>AI izohi</b>${esc(tx)}</div>`; }
-    catch (e) { box.innerHTML = `<p class="note">${aiErr(e)}</p>`; }
+    b.disabled = true; box.innerHTML = statusHTML("Tayyorlanmoqda…");
+    const ctx = { mahsulot: P[rep.c].n, narx: rep.up, birlik: P[rep.c].u, joy: locLine(rep.loc), joy_turi: rep.loc.ty, solishtirma: v.benchLbl, solishtirma_narx: v.bench ? Math.round(v.bench) : null, farq: v.bench ? pct(v.g) : null, baho: VL[v.lab], respublika: v.rep, xaridorlar_narxi: v.cr.n ? Math.round(v.cr.med) : null, chegirma: dv ? { eski: Math.round(rep.old), yangi: rep.price, baho: VL[dv.lab], sabablar: dv.parts.filter(x => x.pts > 0).map(x => x.tx) } : null };
+    try { const tx = await aiExplain("price", ctx); box.innerHTML = tx ? `<div class="ai"><b>Izoh</b>${esc(tx)}</div>` : `<p class="note">Izoh tayyorlab boʻlmadi.</p>`; }
+    catch (e) { box.innerHTML = `<p class="note">${esc(aiErr(e))}</p>`; }
+    b.disabled = false;
   });
-  const sb = $("#sheet-body"), pf = $("#pf-extra"); sb.scrollTo({ top: sb.scrollTop + pf.getBoundingClientRect().top - sb.getBoundingClientRect().top - 8, behavior: "smooth" });
+  $("#sheet-body").scrollTop = 0;
 }
 
 /* ============ Birinchi ochilish ============ */
@@ -1538,9 +1671,9 @@ function onboarding() {
   o.innerHTML = `
   <div class="onb-logo"><svg width="46" height="46" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="12" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.4)"/><circle cx="20" cy="22" r="12" fill="none" stroke="#fff" stroke-width="2.2" opacity=".5"/><circle cx="20" cy="22" r="6.5" fill="none" stroke="#fff" stroke-width="2.2" opacity=".85"/><path d="M20 22 L30 12.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="22" r="2.6" fill="#fff"/></svg><b>NarxRadar</b></div>
   <h1>Narx adolatlimi? Bir soniyada bilib oling.</h1>
-  <p class="lead">Bozor, doʻkon, supermarket va zapravkalarda ${REF.products.length} ta mahsulot narxini AI tekshiradi.</p>
+  <p class="lead">Bozor, doʻkon, supermarket va zapravkalarda ${REF.products.length} ta mahsulot narxini tekshiring.</p>
   <ul class="feat">
-    <li><span class="fi">${IC.cam}</span><span><b>Rasmga oling yoki yozing</b><br><span>AI narx yorligʻini oʻqiydi: lotin, kirill, rus tilida.</span></span></li>
+    <li><span class="fi">${IC.cam}</span><span><b>Rasmga oling yoki yozing</b><br><span>Ilova yorliqni oʻzi oʻqiydi: lotin, kirill va rus tilida.</span></span></li>
     <li><span class="fi">${IC.pin}</span><span><b>Joyingiz avtomatik aniqlanadi</b><br><span>Narx aynan siz turgan hudud bilan solishtiriladi. Aniq manzil saqlanmaydi.</span></span></li>
     <li><span class="fi">${IC.pct}</span><span><b>Soxta chegirmani fosh qiling</b><br><span>“−30%” haqiqiymi yoki eski narx oshirilganmi, tekshiradi.</span></span></li>
   </ul>
@@ -1561,6 +1694,8 @@ function onboarding() {
 
 /* ============ Ishga tushirish ============ */
 wire(".tabbar button[data-tab]", b => b.onclick = () => setTab(b.dataset.tab));
+/* Klaviatura ochilganda yoki element koʻrinishga keltirilganda butun ilova siljib ketmasin */
+$("#app").addEventListener("scroll", e => { if (e.target === $("#app") && e.target.scrollTop) e.target.scrollTop = 0; }, { passive: true });
 $("#gear").onclick = () => setTab("malumot");
 $("#logo").onclick = () => setTab("asosiy");
 for (const t of TABS) $("#v-" + t).addEventListener("scroll", e => $("#top").classList.toggle("sc", e.target.scrollTop > 6), { passive: true });
@@ -1571,10 +1706,82 @@ if (!LS.get("nr-onb", 0)) onboarding();
 if (!NATIVE && "serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("./sw.js").catch(() => { });
 /* Rasmiy maʼlumot yangilanishi: telefon ilovasi ham serverdagi ref.json ni oladi (ilovani qayta oʻrnatmasdan yangilanadi) */
 const REF_URL = NATIVE ? API.replace(/\/api$/, "") + "/ref.json" : "./ref.json";
-if (NATIVE || location.protocol.startsWith("http")) fetch(REF_URL, { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(r => {
-  if (r && Array.isArray(r.products) && r.products.length >= REF0.products.length && r.week >= REF.week && (r.v || 1) >= (REF0.v || 1)) { CAP.refFromDb = r.week > REF0.week; REF = r; indexRef(); SYN_N = null; allReset(); renderAll(); }
-}).catch(() => { });
+/* Rasmiy narxlar: serverda narx.stat.uz ning eng soʻnggi haftasi saqlanadi (har hafta avtomatik yangilanadi) */
+function mergeOfficial(o) {
+  if (!o || !o.week || !o.items || o.week < REF.week) return false;
+  const same = o.week === REF.week;
+  for (const p of REF.products) {
+    if (p.k !== "r") continue;
+    const x = o.items[p.c]; if (!x || !x.p) continue;
+    p.p = x.p;
+    if (x.w != null) { p.w = x.w; p.wOk = true; } else if (!same) { p.w = 0; p.wOk = false; }
+    if (x.y != null) { p.y = x.y; p.yOk = true; } else if (!same) { p.y = 0; p.yOk = false; }
+    if (x.r && Object.keys(x.r).length) p.r = x.r;
+    p.rl = x.rl || null; p.rh = x.rh || null; p.mn = x.mn || null; p.mx = x.mx || null; p.rd = null;
+  }
+  REF.week = o.week; if (o.prev) REF.prev = o.prev; if (o.yearAgo) REF.yearAgo = o.yearAgo; else if (!same) REF.noYear = true;
+  CAP.refFromDb = true; return true;
+}
+async function loadRefs() {
+  if (!(NATIVE || location.protocol.startsWith("http"))) return;
+  try {
+    const r = await fetch(REF_URL, { cache: "no-cache" }).then(x => x.ok ? x.json() : null);
+    if (r && Array.isArray(r.products) && r.products.length >= REF0.products.length && r.week >= REF.week && (r.v || 1) >= (REF0.v || 1)) { CAP.refFromDb = r.week > REF0.week; REF = r; }
+  } catch (e) { }
+  try { const o = await api("/official", undefined, 9000); mergeOfficial(o); } catch (e) { }
+  indexRef(); SYN_N = null; allReset(); if (!SHEET_LOCK) renderAll();
+}
+loadRefs();
 initServer();
+
+/* ============ Telefon ilovasi: orqaga tugmasi va avtomatik yangilanish ============ */
+const APPN = NP("App"), UPDN = NP("CapacitorUpdater");
+const SITE = NATIVE ? API.replace(/\/api$/, "") : "";
+if (APPN) try {
+  APPN.addListener("backButton", () => {
+    if ($("#act").classList.contains("open")) closeAct();
+    else if ($("#sheet").classList.contains("open")) closeSheet();
+    else if (!$("#onb").hidden) { LS.set("nr-onb", 1); $("#onb").hidden = true; renderAll(); }
+    else if (TAB !== "asosiy") setTab("asosiy");
+    else if (APPN.minimizeApp) APPN.minimizeApp(); else if (APPN.exitApp) APPN.exitApp();
+  });
+  APPN.addListener("resume", () => { otaCheck(false); });
+} catch (e) { }
+/* Yangi versiya ilova qayta ochilganda oʻrnatiladi (rasm olish yoki yozish paytida ilova toʻsatdan qayta yuklanmaydi).
+   Agar yangi versiya ochilmasa, telefon oldingisiga qaytadi va bu versiya boshqa sinab koʻrilmaydi. */
+async function otaApplyPending() {
+  const pend = LS.get("nr-ota", null);
+  if (!UPDN || !pend || !pend.id) return false;
+  if (!vgt(pend.v, APP_VERSION)) { LS.set("nr-ota", null); return false; }
+  if ((pend.tries || 0) >= 1) { LS.set("nr-ota-bad", pend.v); LS.set("nr-ota", null); return false; }
+  LS.set("nr-ota", { ...pend, tries: (pend.tries || 0) + 1 });
+  try { await UPDN.set({ id: pend.id }); return true; } catch (e) { LS.set("nr-ota", null); return false; }
+}
+async function otaCheck(force) {
+  if (!UPDN || !SITE) return;
+  if (!force && Date.now() - LS.get("nr-ota-at", 0) < 30 * 60e3) return;
+  LS.set("nr-ota-at", Date.now());
+  let j = null;
+  try { const r = await fetch(SITE + "/ota/latest.json", { cache: "no-store" }); j = r.ok ? await r.json() : null; } catch (e) { j = null; }
+  if (!j || !j.version || !j.url || !vgt(j.version, APP_VERSION) || LS.get("nr-ota-bad", "") === j.version) return;
+  let nat = "0"; try { const c = await UPDN.current(); nat = (c && c.native) || "0"; } catch (e) { }
+  if (j.minNative && vgt(j.minNative, nat)) { UPD_STATE = { kind: "native", v: j.version }; if (!SHEET_LOCK) render(TAB); return; }
+  const pend = LS.get("nr-ota", null);
+  if (pend && pend.v === j.version) { UPD_STATE = { kind: "ready", v: j.version }; if (!SHEET_LOCK) render(TAB); return; }
+  try {
+    const b = await UPDN.download({ url: j.url, version: j.version });
+    LS.set("nr-ota", { v: j.version, id: b.id, tries: 0 });
+    UPD_STATE = { kind: "ready", v: j.version }; if (!SHEET_LOCK) render(TAB);
+  } catch (e) { }
+}
+function updNow() {
+  const pend = LS.get("nr-ota", null); if (!UPDN || !pend) return;
+  LS.set("nr-ota", { ...pend, tries: (pend.tries || 0) + 1 });
+  toast("Yangilanmoqda…");
+  UPDN.set({ id: pend.id }).catch(() => { LS.set("nr-ota", null); UPD_STATE = null; render(TAB); toast("Yangilab boʻlmadi. Keyinroq yana urinadi."); });
+}
+if (UPDN) otaApplyPending().then(applied => { if (!applied) setTimeout(() => otaCheck(true), 3000); }).catch(() => { });
+
 
 </script>
 </body>

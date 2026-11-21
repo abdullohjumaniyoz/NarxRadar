@@ -9,7 +9,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Play har yangi yuklashda kattaroq versionCode talab qiladi: GitHub Actions run raqami ishlatiladi
         versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
-        versionName "1.0.0"
+        versionName "2.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,6 +18,15 @@ android {
         }
     }
     signingConfigs {
+        // Test APK uchun DOIMIY kalit: har yigʻishda bir xil imzo, shuning uchun yangi APK eskisining ustidan oʻrnatiladi
+        // va telefondagi maʼlumotlar saqlanib qoladi. Bu kalit faqat sinov uchun; Google Play'ga upload.jks bilan yuklanadi.
+        narxTest {
+            storeFile file("narxradar-test.keystore")
+            storeType "pkcs12"
+            storePassword "narxradar-test"
+            keyAlias "narxradar-test"
+            keyPassword "narxradar-test"
+        }
         release {
             // Kalit fayli GitHub Secrets orqali beriladi (README: "Play uchun imzo kaliti")
             if (System.getenv("NARX_KEYSTORE_PATH")) {
@@ -29,6 +38,9 @@ android {
         }
     }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.narxTest
+        }
         release {
             if (System.getenv("NARX_KEYSTORE_PATH")) { signingConfig signingConfigs.release }
             minifyEnabled false

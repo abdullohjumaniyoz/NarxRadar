@@ -3,5 +3,7 @@ node_modules/
 .env
 *.jks
 *.keystore
+# Test APK kaliti ataylab repoda turadi (faqat sinov uchun, Play kaliti emas)
+!android/app/narxradar-test.keystore
 upload.jks.base64.txt
 .DS_Store

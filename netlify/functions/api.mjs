@@ -10,6 +10,7 @@
 //   DAILY_AI_LIMIT        — kunlik AI soʻrovlari (hammasi), standart 800
 //   DAILY_AI_PER_IP       — bitta internet manzildan kunlik AI soʻrovlari, standart 80
 //   DAILY_REPORTS_PER_IP  — bitta internet manzildan kunlik xabarlar, standart 60
+//   ADMIN_KEY             — faqat sizga: /ai/selftest, ?rebuild=1 va rasmiy narxlarni yuklash uchun parol (kamida 12 belgi)
 
 import { getStore } from "@netlify/blobs";
 import { createHash } from "node:crypto";
@@ -34,6 +35,9 @@ const PROVIDER =
   CLAUDE_OWN ? "claude" : GEMINI_OWN ? "gemini" :
   KEY ? "claude" : GEMINI_KEY ? "gemini" : null;
 const VIA = PROVIDER === "claude" ? (CLAUDE_OWN ? "direct" : "netlify-gateway") : PROVIDER === "gemini" ? (GEMINI_OWN ? "direct" : "netlify-gateway") : null;
+/* Faqat egasi uchun: ADMIN_KEY (kamida 12 belgi) Netlify muhitida. Kalit URL (?key=) yoki x-admin-key sarlavhasi bilan beriladi. */
+const ADMIN_KEY = String(ENV("ADMIN_KEY") || "");
+const isAdmin = (url, req) => ADMIN_KEY.length >= 12 && (url.searchParams.get("key") === ADMIN_KEY || (req.headers.get("x-admin-key") || "") === ADMIN_KEY);
 
 /* Gemini modellari (2026-noyabr holatiga): 3.8 Flash faqat low/medium/high fikrlashni qabul qiladi,
    3.5 Flash-Lite esa minimal rejimda eng tez ishlaydi. Har bir model uchun mos rejim tanlanadi. */
@@ -196,10 +200,10 @@ const DAILY_AI_IP = Number(ENV("DAILY_AI_PER_IP") || 80);
 const DAILY_PER_IP = Number(ENV("DAILY_REPORTS_PER_IP") || 60);
 const REGIONS = new Set(["TOSS", "TOS", "AND", "BUX", "FAR", "JIZ", "NAM", "NAV", "QAS", "QQR", "SAM", "SIR", "SUR", "XOR"]);
 const MAX_AGG = 2000;
-const VERSION = "2.0.0";
+const VERSION = "2.2.0";
 
 const store = () => getStore("narxradar");
-const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, x-cap-key", "access-control-max-age": "86400" };
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, x-cap-key, x-admin-key", "access-control-max-age": "86400" };
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...CORS } });
 const today = () => new Date().toISOString().slice(0, 10);
 const hashIp = ip => createHash("sha256").update(String(ip)).digest("hex").slice(0, 16);
@@ -221,6 +225,7 @@ async function aiAllowed(ip) {
 /* ---------- Xabarlarni tekshirish (server tomoni) ---------- */
 const num = (v, lo, hi) => (typeof v === "number" && isFinite(v) && v >= lo && v <= hi ? v : null);
 const oneOf = (v, list) => (list.includes(v) ? v : null);
+const pub = x => (x && x.loc ? { ...x, loc: { ...x.loc, la: null, lo: null } } : x);
 function clean(x) {
   if (!x || typeof x !== "object") return null;
   const c = num(x.c, 1, 99999), prod = c && BY_CODE.get(c);
@@ -237,15 +242,17 @@ function clean(x) {
   const qa = x.qa && typeof x.qa === "object" ? x.qa : {};
   const why = Array.isArray(qa.why) ? qa.why.slice(0, 5).map(w => str(String(w), 160)) : [];
   let ok = !!qa.ok;
-  if (prod.p) { const ratio = up / prod.p; if (ratio < 0.3 || ratio > 3.5) { ok = false; why.push("Server: narx rasmiy oʻrtachadan juda uzoq"); } }
+  const off = OFF_CACHE.data && OFF_CACHE.data.items && OFF_CACHE.data.items[c];
+  if (off && off.mn && off.mx) { if (up < off.mn * 0.55 || up > off.mx * 1.7) { ok = false; why.push("Server: narx rasmiy kuzatuvdagi oraliqdan juda uzoq"); } }
+  else if (prod.p) { const ratio = up / prod.p; if (ratio < 0.4 || ratio > 2.6) { ok = false; why.push("Server: narx rasmiy oʻrtachadan juda uzoq"); } }
   else if (prod.lo && (up < prod.lo || up > prod.hi)) { ok = false; why.push("Server: narx odatiy chegaradan tashqarida"); }
   return {
-    id, t, wk: str(x.wk, 10), c, pt: str(x.pt, 80), price, q: num(x.q, 0.001, 1000) || 1, up: Math.round(up),
+    id, t, wk: str(x.wk, 10), a: /^[a-z0-9]{6,12}$/.test(x.a || "") ? x.a : null, cf: num(x.cf, 0, 2), c, pt: str(x.pt, 80), price, q: num(x.q, 0.001, 1000) || 1, up: Math.round(up),
     old: num(x.old, 1, 1e9), src: oneOf(x.src, ["rasm", "matn"]) || "matn", conf: oneOf(x.conf, ["high", "medium", "low"]), issue: str(x.issue, 20),
     loc: {
       r: REGIONS.has(L.r) ? L.r : null, pl: str(L.pl, 60), chain: str(L.chain, 30), ty: oneOf(L.ty, ["bozor", "supermarket", "dokon", "zapravka"]),
       m: oneOf(L.m, ["gps", "exif", "matn", "tanlangan", "oxirgi", "sinov"]),
-      la: la === null ? null : Math.round(la * 1000) / 1000, lo: lo === null ? null : Math.round(lo * 1000) / 1000
+      la: la === null ? null : Math.round(la * 100) / 100, lo: lo === null ? null : Math.round(lo * 100) / 100
     },
     v: v ? { lab: oneOf(v.lab, ["arzon", "adolatli", "qimmat", "juda", "yangi"]), g: num(v.g, -10, 10), b: num(v.b, 0, 1e9), bl: str(v.bl, 60) } : null,
     d: oneOf(x.d, ["haqiqiy", "chalgituvchi", "soxta", "nomalum"]), ds: num(x.ds, 0, 100),
@@ -279,6 +286,90 @@ async function addReport(item) {
   await s.setJSON("agg/latest", { items, updated: new Date().toISOString() });
 }
 
+/* ---------- Rasmiy narxlar: narx.stat.uz ochiq maʼlumoti (haftalik CSV) ----------
+   Manba: https://narx.stat.uz/data → “Toʻliq narx toʻplami” (CSV). Ustunlar:
+   sana;mahsulot_kodi;mahsulot;birlik;toifa;daraja;saoto;hudud;viloyat_saoto;viloyat;narx_som
+   daraja = viloyat | tuman. Viloyat narxi = tumanlar oʻrtachasi; respublika = barcha tumanlar oʻrtachasi. */
+const SAOTO = { "1703": "AND", "1706": "BUX", "1730": "FAR", "1708": "JIZ", "1714": "NAM", "1712": "NAV", "1710": "QAS", "1735": "QQR", "1718": "SAM", "1724": "SIR", "1722": "SUR", "1726": "TOSS", "1727": "TOS", "1733": "XOR" };
+const isDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || "") && !isNaN(Date.parse(d));
+const quant = (s, f) => { const i = (s.length - 1) * f, a = Math.floor(i), b = Math.ceil(i); return s[a] + (s[b] - s[a]) * (i - a); };
+const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+function parseOfficialCSV(text) {
+  const lines = String(text || "").replace(/^﻿/, "").split(/\r?\n/).filter(l => l.trim());
+  const bad = code => Object.assign(new Error(code), { code, status: 400 });
+  if (lines.length < 30) throw bad("csv_short");
+  const head = lines[0].split(";").map(x => x.trim().toLowerCase());
+  const col = n => head.indexOf(n);
+  const I = { d: col("sana"), c: col("mahsulot_kodi"), n: col("mahsulot"), u: col("birlik"), lv: col("daraja"), s: col("saoto"), vs: col("viloyat_saoto"), p: col("narx_som") };
+  if (Object.values(I).some(v => v < 0)) throw bad("csv_format");
+  const prods = {}; let date = null;
+  for (let k = 1; k < lines.length; k++) {
+    const r = lines[k].split(";");
+    const price = Number(String(r[I.p] || "").replace(",", ".")), c = Number(r[I.c]);
+    if (!c || !isFinite(price) || price <= 0) continue;
+    if (!date) date = String(r[I.d]).trim();
+    if (String(r[I.d]).trim() !== date) continue;
+    const P = prods[c] || (prods[c] = { n: r[I.n], u: r[I.u], rep: null, reg: {}, dist: {}, all: [] });
+    const lv = String(r[I.lv] || "").trim().toLowerCase();
+    const g = SAOTO[String(r[I.vs]).trim()] || SAOTO[String(r[I.s]).trim().slice(0, 4)];
+    if (lv === "viloyat" && g) P.reg[g] = price;
+    else if (lv === "tuman" && g) { (P.dist[g] = P.dist[g] || []).push(price); P.all.push(price); }
+    else if (/resp|zbek|uzb/.test(lv)) P.rep = price;
+  }
+  if (!isDate(date)) throw bad("csv_date");
+  const products = {};
+  for (const [c, P] of Object.entries(prods)) {
+    const r = {}, rl = {}, rh = {};
+    for (const [g, v] of Object.entries(P.reg)) r[g] = Math.round(v);
+    for (const [g, arr] of Object.entries(P.dist)) {
+      const sorted = arr.sort((a, b) => a - b);
+      if (!r[g]) r[g] = Math.round(mean(sorted));
+      if (sorted.length >= 3) { rl[g] = Math.round(quant(sorted, 0.1)); rh[g] = Math.round(quant(sorted, 0.9)); }
+    }
+    const all = P.all.sort((a, b) => a - b), regv = Object.values(r);
+    const rep = P.rep || (all.length ? mean(all) : regv.length ? mean(regv) : null);
+    if (!rep) continue;
+    products[c] = { n: String(P.n || "").slice(0, 80), u: String(P.u || "").slice(0, 12), p: Math.round(rep), r, rl, rh, mn: all.length ? Math.round(quant(all, 0.02)) : null, mx: all.length ? Math.round(quant(all, 0.98)) : null, nd: all.length };
+  }
+  if (Object.keys(products).length < 10) throw bad("csv_products");
+  return { date, products };
+}
+const OFF_CACHE = { data: null, at: 0 };
+async function officialSummary(force) {
+  if (!force && OFF_CACHE.data && Date.now() - OFF_CACHE.at < 10 * 60e3) return OFF_CACHE.data;
+  const data = await store().get("off/summary", { type: "json" });
+  OFF_CACHE.data = data || null; OFF_CACHE.at = Date.now();
+  return OFF_CACHE.data;
+}
+async function rebuildOfficialSummary() {
+  const s = store();
+  const dates = ((await s.get("off/index", { type: "json" })) || []).filter(isDate).sort();
+  if (!dates.length) return null;
+  const week = dates.at(-1), t = Date.parse(week), DAY = 864e5;
+  const near = (target, tol) => { const c = dates.filter(d => d < week).map(d => [d, Math.abs(Date.parse(d) - target)]).filter(x => x[1] <= tol * DAY).sort((a, b) => a[1] - b[1]); return c.length ? c[0][0] : null; };
+  const prev = near(t - 7 * DAY, 3), yearAgo = near(t - 364 * DAY, 10);
+  const W = await s.get(`off/w/${week}`, { type: "json" });
+  const Pv = prev ? await s.get(`off/w/${prev}`, { type: "json" }) : null;
+  const Y = yearAgo ? await s.get(`off/w/${yearAgo}`, { type: "json" }) : null;
+  const items = {};
+  for (const [c, x] of Object.entries(W.products)) {
+    const pp = Pv && Pv.products[c], yy = Y && Y.products[c];
+    items[c] = { p: x.p, w: pp ? x.p - pp.p : null, y: yy ? x.p - yy.p : null, r: x.r, rl: x.rl, rh: x.rh, mn: x.mn, mx: x.mx, nd: x.nd, n: x.n, u: x.u };
+  }
+  const sum = { week, prev, yearAgo, dates: dates.slice(-60), items, source: "narx.stat.uz ochiq maʼlumoti", updated: new Date().toISOString() };
+  await s.setJSON("off/summary", sum);
+  OFF_CACHE.data = sum; OFF_CACHE.at = Date.now();
+  return sum;
+}
+async function saveOfficial(parsed) {
+  const s = store();
+  await s.setJSON(`off/w/${parsed.date}`, { date: parsed.date, products: parsed.products, saved: new Date().toISOString() });
+  const idx = ((await s.get("off/index", { type: "json" })) || []).filter(isDate);
+  if (!idx.includes(parsed.date)) idx.push(parsed.date);
+  await s.setJSON("off/index", idx.sort());
+  return rebuildOfficialSummary();
+}
+
 /* ---------- Marshrutlar ---------- */
 export default async (req, context) => {
   const T0 = Date.now();
@@ -287,7 +378,8 @@ export default async (req, context) => {
   const ip = (context && context.ip) || req.headers.get("x-nf-client-connection-ip") || "0";
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   try {
-    if (route === "health") return json({ ok: true, v: VERSION, ai: !!PROVIDER, provider: PROVIDER, via: VIA, db: true, edge: "/ai" });
+    const admin = isAdmin(url, req);
+    if (route === "health") return json(admin ? { ok: true, v: VERSION, ai: !!PROVIDER, provider: PROVIDER, via: VIA, db: true, edge: "/ai", admin: true } : { ok: true, v: VERSION, ai: !!PROVIDER, db: true });
 
     /* Edge funksiya uchun kunlik limit hisoblagichi */
     if (route === "cap" && req.method === "POST") {
@@ -296,21 +388,37 @@ export default async (req, context) => {
       return json({ ok: await aiAllowed(String(b.ip || ip)) });
     }
 
-    if (route === "selftest" && req.method === "GET") {
+    if (route === "selftest") {
+      if (!admin) return json({ error: "not_found" }, 404);
       if (!PROVIDER) return json({ ok: false, error: "no_ai" });
       if (!(await aiAllowed(ip))) return json({ ok: false, error: "rate_limited" });
       const img = url.searchParams.get("img") === "1";
       return streamJSON(() => runTask("selftest", { img }, { deadline: T0 + 9000 }), CORS);
     }
+    if (route === "official" && req.method === "GET") {
+      const sum = await officialSummary(false);
+      return new Response(JSON.stringify(sum || { week: null }), { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=300", ...CORS } });
+    }
+    if (route === "official" && req.method === "POST") {
+      if (!admin) return json({ error: "forbidden" }, 403);
+      const parsed = parseOfficialCSV(await req.text());
+      const want = url.searchParams.get("date");
+      if (want && want !== parsed.date) return json({ error: "date_mismatch", got: parsed.date }, 400);
+      const sum = await saveOfficial(parsed);
+      const pick = c => parsed.products[c] ? `${parsed.products[c].n}: ${parsed.products[c].p}` : null;
+      return json({ ok: true, date: parsed.date, products: Object.keys(parsed.products).length, week: sum && sum.week, prev: sum && sum.prev, yearAgo: sum && sum.yearAgo, check: [pick(100), pick(1180), pick(170)].filter(Boolean) });
+    }
     if (route === "reports" && req.method === "GET") {
-      const items = url.searchParams.get("rebuild") === "1" ? await rebuild() : await listReports();
-      return json({ items });
+      const items = admin && url.searchParams.get("rebuild") === "1" ? await rebuild() : await listReports();
+      /* Ochiq roʻyxatda aniq koordinata yoʻq: faqat hudud va joy nomi */
+      return json({ items: admin ? items : items.map(pub) });
     }
     if (req.method !== "POST") return json({ error: "method" }, 405);
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") return json({ error: "invalid" }, 400);
 
     if (route === "reports") {
+      try { await officialSummary(false); } catch (e) { } /* rasmiy oraliq bilan tekshirish uchun */
       const item = clean(body.item);
       if (!item) return json({ error: "invalid" }, 400);
       if (!(await bump(`rl/${today()}/${hashIp(ip)}`, DAILY_PER_IP))) return json({ error: "rate_limited" }, 429);
@@ -324,6 +432,7 @@ export default async (req, context) => {
     /* 10 soniyalik chegaradan oldin javob qaytaramiz */
     return streamJSON(() => runTask(route, body, { deadline: T0 + 9000, edge: false }), CORS);
   } catch (e) {
+    if (e && e.status === 400) return json({ error: e.code || "invalid" }, 400);
     return json(errOut(e), e && e.status === 429 ? 429 : 502);
   }
 };

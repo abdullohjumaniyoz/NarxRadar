@@ -2,6 +2,7 @@
 [build]
   publish = "docs"
   command = "echo 'build shart emas'"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- docs netlify netlify.toml"
 
 [functions]
   directory = "netlify/functions"
@@ -19,7 +20,31 @@
     X-Content-Type-Options = "nosniff"
 
 [[headers]]
+  for = "/admin.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-cache"
+
+[[headers]]
   for = "/ref.json"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/ota/latest.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/ota/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=31536000, immutable"

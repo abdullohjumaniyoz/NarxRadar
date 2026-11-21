@@ -1,5 +1,7 @@
 # Android ilovani GitHub serverida yigʻadi: kompyuterga Android Studio oʻrnatish shart emas.
 # Natija: Actions → oxirgi ishga tushirish → Artifacts → "NarxRadar-test-apk" (telefonga oʻrnatish uchun)
+# Test APK doimiy test kaliti (android/app/narxradar-test.keystore) bilan imzolanadi:
+# yangi APK eskisining ustidan oʻrnatiladi, ilovani oʻchirish shart emas.
 # Imzo kaliti sozlansa, "NarxRadar-play-aab" ham chiqadi (Google Play'ga yuklash uchun).
 name: Android ilova
 

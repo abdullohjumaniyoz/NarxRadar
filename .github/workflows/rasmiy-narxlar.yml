@@ -1,0 +1,28 @@
+# Rasmiy narxlarni (narx.stat.uz ochiq maʼlumoti) har hafta avtomatik yangilaydi.
+# Kerak: Settings → Secrets and variables → Actions → New repository secret → NARX_ADMIN_KEY
+# (qiymati Netlify'dagi ADMIN_KEY bilan bir xil). Bu ish Netlify kreditini sarflamaydi: maʼlumot serverga yoziladi.
+name: Rasmiy narxlar
+
+on:
+  schedule:
+    - cron: "20 4 * * 2,4,6"   # seshanba, payshanba, shanba — Toshkent vaqti bilan 09:20
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Sana (YYYY-MM-DD). Bir nechta boʻlsa, vergul bilan. Boʻsh qoldirsangiz — oxirgi hafta."
+        required: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: narx.stat.uz dan olish va serverga yuklash
+        run: node tools/rasmiy-narx.mjs
+        env:
+          NARX_ADMIN_KEY: ${{ secrets.NARX_ADMIN_KEY }}
+          NARX_DATE: ${{ github.event.inputs.date }}
