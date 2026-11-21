@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NarxRadar</title>
-<meta name="theme-color" content="#0b7a6e">
+<meta name="theme-color" content="#f1f4f2">
+<script>/* Koʻrinish: standart — yorugʻ. Sozlamalarda: yorugʻ, qorongʻi yoki telefon kabi */
+(function(){var t="light";try{t=JSON.parse(localStorage.getItem("nr-theme"))||"light"}catch(e){}if(t!=="dark"&&t!=="auto")t="light";document.documentElement.setAttribute("data-theme",t)})();</script>
 <meta name="description" content="Bozor, doʻkon va zapravka narxlarini rasm yoki matn orqali tekshirish, narx indeksi va soxta chegirmalarni aniqlash">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -23,29 +25,36 @@
 @font-face{font-family:"Unbounded V";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/unbounded-cyrillic-wght-normal.woff2) format("woff2");unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 /* NarxRadar 2.1 — zamonaviy mobil interfeys: shishasimon sarlavha, gradientli asosiy karta, markazda skaner tugmasi. */
 :root{
-  --bg:#f3f6f7; --surface:#ffffff; --surface2:#eef3f4; --surface3:#e4ecee; --ink:#0d1b21; --ink2:#5b6c73; --ink3:#8a9aa0; --line:#e2e9eb;
-  --brand:#0b7a6e; --brand2:#0f9e8a; --brand-ink:#ffffff; --brand-soft:#dcf3ee; --brand-deep:#0a4d4a;
-  --hero:linear-gradient(140deg,#13b39a 0%,#0b8a7a 38%,#0a5f66 78%,#0b4752 100%);
-  --hero-disc:linear-gradient(140deg,#ff8a3d 0%,#f05a3c 48%,#c2364a 100%);
-  --hero-ix:linear-gradient(140deg,#4f7cff 0%,#3a55d8 45%,#2b3a9c 100%);
-  --good:#14924f; --good-soft:#dcf5e7; --warn:#c06a00; --warn-soft:#fdefd6; --crit:#d12d2d; --crit-soft:#fde2e0; --cheap:#2363d6; --cheap-soft:#e0eafe; --new:#6d4ad8; --new-soft:#ece6ff; --mute:#6b7a80; --mute-soft:#edf1f2;
+  --bg:#f1f4f2; --surface:#ffffff; --surface2:#ecf1ee; --surface3:#e1e8e4; --ink:#102321; --ink2:#55665f; --ink3:#86958f; --line:#dfe6e2;
+  --brand:#0b7d73; --brand2:#11a093; --brand-ink:#ffffff; --brand-soft:#dbf0ea; --brand-deep:#08514b;
+  --hero:#0b6f67; --hero-disc:#d23540; --hero-ix:#2a4fd3;
+  --tag:#ffcb3d; --tag-ink:#1c2a1e; --tag-soft:rgba(28,42,30,.08); --tag-line:rgba(28,42,30,.28);
+  --good:#13824a; --good-soft:#dcf3e5; --warn:#b26100; --warn-soft:#fcecd2; --crit:#c92c37; --crit-soft:#fbe1df; --cheap:#2a4fd3; --cheap-soft:#e2e8fd; --new:#6a47d2; --new-soft:#ebe5fd; --mute:#66756f; --mute-soft:#ebefed;
   --display:"Unbounded V","Onest V",system-ui,sans-serif;
   --body:"Onest V",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:22px; --r2:16px;
-  --shadow:0 1px 2px rgba(13,27,33,.05),0 10px 30px -12px rgba(13,27,33,.14);
-  --shadow2:0 18px 40px -16px rgba(11,122,110,.55);
+  --shadow:0 1px 2px rgba(16,35,33,.04); --float:0 14px 34px -16px rgba(16,35,33,.32);
+  --shadow2:0 14px 34px -16px rgba(16,35,33,.32);
   --sat:var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   --sab:var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
+  :root[data-theme="auto"]{
     --bg:#081214; --surface:#101d20; --surface2:#16262a; --surface3:#1d3135; --ink:#e6f0ef; --ink2:#a0b3b4; --ink3:#748688; --line:#20343a;
     --brand:#2fc7ae; --brand2:#3ad9be; --brand-ink:#04231f; --brand-soft:#123a35; --brand-deep:#0a2d2a;
     --good:#4fd18a; --good-soft:#123222; --warn:#f3aa45; --warn-soft:#3a2a10; --crit:#ff7c72; --crit-soft:#3d1a19; --cheap:#7fb0ff; --cheap-soft:#16284a; --new:#a990ff; --new-soft:#251d45; --mute:#93a3a6; --mute-soft:#1b2a2d;
-    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6); --shadow2:0 18px 40px -18px rgba(0,0,0,.7); color-scheme:dark;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6); --shadow2:0 18px 40px -18px rgba(0,0,0,.7); --hero:#0d5f59; --hero-disc:#b8303a; --hero-ix:#2b47b8; color-scheme:dark;
   }
 }
+
+  :root[data-theme="dark"]{
+    --bg:#081214; --surface:#101d20; --surface2:#16262a; --surface3:#1d3135; --ink:#e6f0ef; --ink2:#a0b3b4; --ink3:#748688; --line:#20343a;
+    --brand:#2fc7ae; --brand2:#3ad9be; --brand-ink:#04231f; --brand-soft:#123a35; --brand-deep:#0a2d2a;
+    --good:#4fd18a; --good-soft:#123222; --warn:#f3aa45; --warn-soft:#3a2a10; --crit:#ff7c72; --crit-soft:#3d1a19; --cheap:#7fb0ff; --cheap-soft:#16284a; --new:#a990ff; --new-soft:#251d45; --mute:#93a3a6; --mute-soft:#1b2a2d;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.6); --shadow2:0 18px 40px -18px rgba(0,0,0,.7); --hero:#0d5f59; --hero-disc:#b8303a; --hero-ix:#2b47b8; color-scheme:dark;
+  }
+
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;display:flex;justify-content:center;-webkit-font-smoothing:antialiased}
@@ -129,7 +138,8 @@ a{color:var(--brand)}
 .qt b{font-size:13.5px;line-height:1.2}
 .qt span{font-size:11.5px;color:var(--ink2);line-height:1.25}
 .qi.c1{background:#ffe9dc;color:#e0592a}.qi.c2{background:var(--brand-soft);color:var(--brand)}.qi.c3{background:#e3e9ff;color:#3a55d8}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .qi.c1{background:#3a2216;color:#ff9a6a}:root:not([data-theme="light"]) .qi.c3{background:#1c2450;color:#8ea2ff}}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .qi.c1{background:#3a2216;color:#ff9a6a}:root[data-theme="auto"] .qi.c3{background:#1c2450;color:#8ea2ff}}
+:root[data-theme="dark"] .qi.c1{background:#3a2216;color:#ff9a6a}:root[data-theme="dark"] .qi.c3{background:#1c2450;color:#8ea2ff}
 
 /* gorizontal aylantirma */
 .hscroll{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:2px 16px 6px;scroll-snap-type:x mandatory;scrollbar-width:none}
@@ -148,7 +158,8 @@ a{color:var(--brand)}
 .av{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;flex:none;font-size:23px;line-height:1;background:var(--surface2)}
 .av.lg{width:64px;height:64px;border-radius:22px;font-size:34px}
 .av.gosht{background:#ffe5e2}.av.don{background:#fbf0d8}.av.sut{background:#e6f0ff}.av.yog{background:#fff3c4}.av.sabz{background:#e2f6e3}.av.meva{background:#ffe7ef}.av.ichim{background:#efe7dd}.av.uy{background:#e6f6fb}.av.yoqilgi{background:#ece9ff}.av.boshqa{background:#f1ece6}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .av{background:var(--surface2) !important}}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .av{background:var(--surface2) !important}}
+:root[data-theme="dark"] .av{background:var(--surface2) !important}
 
 /* tugmalar */
 .linkbtn{background:none;border:0;padding:4px 0;color:var(--brand);font-weight:700;font-size:14px;text-align:left}
@@ -301,7 +312,8 @@ input.in.huge{font-size:20px;padding:16px}
 .note.warn{background:var(--warn-soft);color:var(--ink)}
 .trust{display:flex;gap:12px;align-items:center;padding:14px;border-radius:20px;background:var(--brand-soft);color:var(--brand-deep);font-size:13px}
 .trust svg{width:30px;height:30px;flex:none;color:var(--brand)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .trust{color:var(--ink)}}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .trust{color:var(--ink)}}
+:root[data-theme="dark"] .trust{color:var(--ink)}
 .ai{background:var(--brand-soft);border-radius:16px;padding:12px 14px;font-size:14.5px}
 .ai b{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin-bottom:4px}
 .pipe{display:flex;flex-direction:column;margin:0;padding:0;list-style:none;counter-reset:p}
@@ -385,13 +397,77 @@ details.more .checks,details.more .pipe{margin-top:10px}
 .warnline{margin:0;font-size:13px;font-weight:700;color:var(--warn);background:var(--warn-soft);border-radius:12px;padding:9px 12px}
 .parse span.no{white-space:normal}
 @media (prefers-reduced-motion: reduce){ .scanbox::after,.spin{animation:none} .view>*{animation:none} }
+
+/* ===== 2.3 «Yorliq» dizayni =====
+   Gʻoya: narx — asosiy qahramon. Bosh kartalar bozordagi osma narx yorligʻi shaklida (kesilgan burchak, teshik).
+   Sariq (zafaron) faqat ikki joyda: bosh yorliq va skaner tugmasi. Qolgani tinch: oq panellar, ingichka chiziqlar, soya yoʻq. */
+@media (min-width:600px){ body{background:var(--bg)} .app{box-shadow:0 30px 80px -30px rgba(16,35,33,.25)} }
+.view>*{animation:none}
+@media (prefers-reduced-motion:no-preference){ .view:not([hidden]){animation:vin .18s ease-out} }
+@keyframes vin{from{opacity:.4}to{opacity:1}}
+
+.logo b{font-size:17px}
+.locchip{box-shadow:none;background:var(--surface)}
+.iconbtn{border-radius:999px}
+
+/* yorliq */
+.hero{background:var(--tag);color:var(--tag-ink);border-radius:22px;box-shadow:none;padding:20px 18px 18px;gap:14px;
+  clip-path:polygon(30px 0,100% 0,100% 100%,0 100%,0 30px)}
+.hero::before{width:13px;height:13px;left:21px;top:21px;right:auto;border-radius:50%;background:var(--bg);box-shadow:inset 0 1.5px 2px rgba(0,0,0,.28)}
+.hero::after{display:none}
+.hero .lbl{padding-left:24px;font-size:13.5px;font-weight:700;letter-spacing:0;text-transform:none;opacity:.78;min-height:15px}
+.hero .bigw{font-size:44px;letter-spacing:-.045em}
+.hero .bigw small{font-size:16px;opacity:.75}
+.hero .meta{opacity:.7;font-size:12.5px;line-height:1.4}
+.glass{background:var(--tag-soft);border:0;color:inherit;font-weight:700}
+.hbtns{grid-template-columns:1.4fr 1fr}
+.hbtn{background:var(--tag-ink);color:#fff;box-shadow:none;border-radius:14px}
+.hbtn.alt{background:transparent;color:var(--tag-ink);border:1.5px solid var(--tag-line)}
+.hero.disc,.hero.ix{color:#fff;box-shadow:none}
+.hero.disc{background:var(--hero-disc)}
+.hero.ix{background:var(--hero-ix)}
+.hero.disc .glass,.hero.ix .glass{background:rgba(255,255,255,.16)}
+.hero.disc .hbtn,.hero.ix .hbtn{background:#fff;color:var(--tag-ink)}
+.hero.disc .hbtn.alt,.hero.ix .hbtn.alt{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+
+/* tinch sirtlar */
+.card,.qt,.mv,.vcard,.opt{box-shadow:none}
+.card{border-radius:20px}
+.qt{border-radius:18px;min-height:88px}
+.mv{border-radius:18px}
+.qi.c1{background:var(--crit-soft);color:var(--crit)}.qi.c3{background:var(--cheap-soft);color:var(--cheap)}
+.sec h2{font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:-.03em}
+.title h1{font-size:26px}
+.cathead{text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:700}
+.src{text-transform:none;letter-spacing:0;font-size:11px;font-weight:700}
+.ai b{text-transform:none;letter-spacing:0;font-size:14px;color:var(--brand-deep)}
+.btn{box-shadow:none;border-radius:14px}
+.btn2{border-radius:14px}
+.btn.warm{background:var(--hero-disc);box-shadow:none}
+.bar .fill{background:var(--brand)}
+.cat[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.trust{background:var(--surface);border:1px solid var(--line);color:var(--ink2)}
+.trust b{color:var(--ink)}
+
+/* pastki menyu: faol boʻlim yumshoq fon ichida, skaner — sariq */
+.tabbar{box-shadow:var(--float);border-radius:24px}
+.tabbar button{font-weight:700;color:var(--ink2)}
+.tabbar button svg{box-sizing:content-box;padding:3px 14px;border-radius:999px;transition:background-color .15s}
+.tabbar button[aria-current="page"]{color:var(--brand-deep)}
+.tabbar button[aria-current="page"] svg{background:var(--brand-soft);transform:none}
+.fab{background:var(--tag) !important;color:var(--tag-ink) !important;box-shadow:var(--float);border-radius:22px !important}
+.fab svg{box-sizing:border-box;padding:0;background:none !important}
+:root[data-theme="dark"] .tabbar button[aria-current="page"]{color:var(--brand)}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .tabbar button[aria-current="page"]{color:var(--brand)}}
+:root[data-theme="dark"] .ai b{color:var(--brand)}
+@media (prefers-color-scheme: dark){:root[data-theme="auto"] .ai b{color:var(--brand)}}
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <header class="top" id="top">
     <button class="logo" id="logo" aria-label="Asosiy sahifa">
-      <svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16b89e"/><stop offset="1" stop-color="#0a5f66"/></linearGradient></defs><rect x="1" y="1" width="38" height="38" rx="12" fill="url(#lg1)"/><circle cx="20" cy="22" r="12" fill="none" stroke="#fff" stroke-width="2.2" opacity=".45"/><circle cx="20" cy="22" r="6.5" fill="none" stroke="#fff" stroke-width="2.2" opacity=".8"/><path d="M20 22 L30 12.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="22" r="2.6" fill="#fff"/></svg>
+      <svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="12" fill="#0b6f67"/><g transform="rotate(45 20 20)"><path d="M8.35 21.25 L8.12 20.98 L7.95 20.68 L7.84 20.35 L7.80 20.00 L7.84 19.65 L7.95 19.32 L8.12 19.02 L8.35 18.75 L15.12 12.42 L15.23 12.33 L15.34 12.25 L15.46 12.18 L15.59 12.13 L15.72 12.08 L15.86 12.05 L15.99 12.03 L16.13 12.02 L29.87 12.02 L30.48 12.08 L31.06 12.26 L31.60 12.55 L32.08 12.93 L32.46 13.41 L32.75 13.95 L32.93 14.53 L32.99 15.14 L32.99 24.86 L32.93 25.47 L32.75 26.05 L32.46 26.59 L32.08 27.07 L31.60 27.45 L31.06 27.74 L30.48 27.92 L29.87 27.98 L16.13 27.98 L15.99 27.97 L15.86 27.95 L15.72 27.92 L15.59 27.87 L15.46 27.82 L15.34 27.75 L15.23 27.67 L15.12 27.58Z" fill="#ffcb3d"/><circle cx="14.25" cy="20.00" r="1.93" fill="#0b6f67"/><path d="M19.07 15.65A6.49 6.49 0 0 1 19.07 24.35" fill="none" stroke="#0b6f67" stroke-width="2.08"/><path d="M22.11 12.92A10.58 10.58 0 0 1 22.11 27.08" fill="none" stroke="#0b6f67" stroke-width="2.08"/></g></svg>
       <b>NarxRadar</b>
     </button>
     <button class="locchip" id="locchip" aria-label="Joylashuv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span id="loctext">Joylashuv…</span></button>
@@ -435,7 +511,7 @@ const REF0 = {"v":2,"week":"2026-11-11","prev":"2026-11-04","yearAgo":"2025-11-1
 let REF = REF0, P = {};
 function indexRef() { P = Object.fromEntries(REF.products.map(p => [p.c, p])); }
 indexRef();
-const APP_VERSION = "2.2.2";
+const APP_VERSION = "2.3.0";
 
 /* k: "r" — narx.stat.uz rasmiy oʻrtacha; "s" — narxtahlil.uz supermarket narxi; "x" — rasmiy manba yoʻq, faqat xaridorlar xabarlari */
 const KIND = { r: "Rasmiy", s: "Supermarket", x: "Xalq narxi" };
@@ -555,6 +631,18 @@ const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSO
 const CAPN = window.Capacitor;
 const NATIVE = !!(CAPN && typeof CAPN.isNativePlatform === "function" && CAPN.isNativePlatform());
 const NP = name => (NATIVE && CAPN.Plugins && CAPN.Plugins[name]) || null;
+/* Koʻrinish: yorugʻ (standart), qorongʻi yoki telefon sozlamasi kabi. Telefonning yuqori qatori ham mos rangga oʻtadi. */
+const THEMES = { light: "Yorugʻ", dark: "Qorongʻi", auto: "Telefon kabi" };
+const themeDark = t => t === "dark" || (t === "auto" && !!window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+function applyTheme(t) {
+  if (!THEMES[t]) t = "light";
+  document.documentElement.setAttribute("data-theme", t);
+  const dark = themeDark(t), m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", dark ? "#081214" : "#f1f4f2");
+  try { const SB = NP("SystemBars"); if (SB && SB.setStyle) Promise.resolve(SB.setStyle({ style: dark ? "DARK" : "LIGHT" })).catch(() => { }); } catch (e) { }
+}
+applyTheme(LS.get("nr-theme", "light"));
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => applyTheme(LS.get("nr-theme", "light"))); } catch (e) { }
 /* Yangilanish xavfsizligi: yangi versiya muvaffaqiyatli ochilganini telefonga darhol bildiramiz.
    Aks holda telefon 15 soniyadan keyin avtomatik ravishda oldingi ishlaydigan versiyaga qaytadi. */
 try { const U0 = NP("CapacitorUpdater"); if (U0) U0.notifyAppReady(); } catch (e) { }
@@ -1294,6 +1382,7 @@ function renderData() {
   </section>
   <section class="card">
     <h2>Sozlamalar</h2>
+    <div class="stack" style="gap:6px"><span class="sub">Koʻrinish</span><div class="seg" id="m-theme" role="group" aria-label="Koʻrinish">${Object.entries(THEMES).map(([k, n]) => `<button data-th="${k}" aria-pressed="${LS.get("nr-theme", "light") === k}">${n}</button>`).join("")}</div></div>
     <button class="btn2" id="m-loc">${IC.pin} Joylashuv: ${esc(locLine(LOC))}</button>
     ${NP("LocalNotifications") ? `<button class="btn2" id="m-remind">${IC.bell} ${LS.get("nr-remind", 0) ? "Haftalik eslatmani oʻchirish" : "Har dushanba narx eslatmasi"}</button>` : ""}
     <button class="btn2" id="m-test">${IC.spark} Server ulanishini tekshirish</button>
@@ -1351,6 +1440,7 @@ function renderData() {
     else out.innerHTML = `<p class="note warn">Serverga ulanib boʻlmadi. Internetni tekshiring; ilova oflayn rejimda ishlashda davom etadi.</p>`;
     if ((edge || node) && !CAP.srv) serverAgain();
   };
+  wire("#m-theme button", b => b.onclick = () => { LS.set("nr-theme", b.dataset.th); applyTheme(b.dataset.th); wire("#m-theme button", x => x.setAttribute("aria-pressed", String(x === b))); });
   $("#m-loc").onclick = () => openLocSheet(true);
   $("#m-clear").onclick = () => { if (!confirm("Shu telefondagi barcha xabarlar oʻchirilsinmi?")) return; LOCAL = []; LS.set("nr-local", []); allReset(); toast("Shu telefondagi xabarlar oʻchirildi."); renderData(); };
   if (adm) wireAdmin();
@@ -1723,7 +1813,7 @@ function showResult(reps, o, saved) {
 function onboarding() {
   const o = $("#onb"); o.hidden = false;
   o.innerHTML = `
-  <div class="onb-logo"><svg width="46" height="46" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="12" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.4)"/><circle cx="20" cy="22" r="12" fill="none" stroke="#fff" stroke-width="2.2" opacity=".5"/><circle cx="20" cy="22" r="6.5" fill="none" stroke="#fff" stroke-width="2.2" opacity=".85"/><path d="M20 22 L30 12.5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="22" r="2.6" fill="#fff"/></svg><b>NarxRadar</b></div>
+  <div class="onb-logo"><svg width="46" height="46" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="12" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.3)"/><g transform="rotate(45 20 20)"><path d="M8.35 21.25 L8.12 20.98 L7.95 20.68 L7.84 20.35 L7.80 20.00 L7.84 19.65 L7.95 19.32 L8.12 19.02 L8.35 18.75 L15.12 12.42 L15.23 12.33 L15.34 12.25 L15.46 12.18 L15.59 12.13 L15.72 12.08 L15.86 12.05 L15.99 12.03 L16.13 12.02 L29.87 12.02 L30.48 12.08 L31.06 12.26 L31.60 12.55 L32.08 12.93 L32.46 13.41 L32.75 13.95 L32.93 14.53 L32.99 15.14 L32.99 24.86 L32.93 25.47 L32.75 26.05 L32.46 26.59 L32.08 27.07 L31.60 27.45 L31.06 27.74 L30.48 27.92 L29.87 27.98 L16.13 27.98 L15.99 27.97 L15.86 27.95 L15.72 27.92 L15.59 27.87 L15.46 27.82 L15.34 27.75 L15.23 27.67 L15.12 27.58Z" fill="#ffcb3d"/><circle cx="14.25" cy="20.00" r="1.93" style="fill:var(--hero)"/><path d="M19.07 15.65A6.49 6.49 0 0 1 19.07 24.35" fill="none" style="stroke:var(--hero)" stroke-width="2.08"/><path d="M22.11 12.92A10.58 10.58 0 0 1 22.11 27.08" fill="none" style="stroke:var(--hero)" stroke-width="2.08"/></g></svg><b>NarxRadar</b></div>
   <h1>Narx adolatlimi? Bir soniyada bilib oling.</h1>
   <p class="lead">Bozor, doʻkon, supermarket va zapravkalarda ${REF.products.length} ta mahsulot narxini tekshiring.</p>
   <ul class="feat">
