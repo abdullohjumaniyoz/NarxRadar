@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ilova foni: ochilishda qora miltillash boʻlmasligi uchun -->
+    <color name="nr_bg">#F1F4F2</color>
+</resources>

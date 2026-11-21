@@ -26,5 +26,6 @@
       "autoDeleteFailed": true,
       "autoDeletePrevious": true
     }
-  }
+  },
+  "backgroundColor": "#F1F4F2"
 }
