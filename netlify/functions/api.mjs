@@ -169,7 +169,9 @@ async function runTask(route, body, opts) {
   if (route === "explain") {
     const kind = body && body.kind === "index" ? "index" : "price";
     const ctx = JSON.stringify((body && body.ctx) || {}).slice(0, 3000);
-    const r = await aiCall([{ type: "text", text: EXPLAIN_PROMPT(kind, ctx) }], { ...opts, maxTokens: 400 });
+    const lang = body && ["ru", "en"].includes(body.lang) ? body.lang : "uz";
+    const note = { uz: "", ru: "\n\nВажно: весь ответ напиши на русском языке.", en: "\n\nImportant: write the whole answer in English." }[lang];
+    const r = await aiCall([{ type: "text", text: EXPLAIN_PROMPT(kind, ctx) + note }], { ...opts, maxTokens: 500 });
     return { text: r.text.trim().slice(0, 1500) };
   }
   if (route === "selftest") {
@@ -209,7 +211,7 @@ const DAILY_AI_IP = Number(ENV("DAILY_AI_PER_IP") || 80);
 const DAILY_PER_IP = Number(ENV("DAILY_REPORTS_PER_IP") || 60);
 const REGIONS = new Set(["TOSS", "TOS", "AND", "BUX", "FAR", "JIZ", "NAM", "NAV", "QAS", "QQR", "SAM", "SIR", "SUR", "XOR"]);
 const MAX_AGG = 2000;
-const VERSION = "2.2.2";
+const VERSION = "2.4.0";
 
 const store = () => getStore("narxradar");
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, x-cap-key, x-admin-key", "access-control-max-age": "86400" };

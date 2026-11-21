@@ -157,7 +157,9 @@ async function runTask(route, body, opts) {
   if (route === "explain") {
     const kind = body && body.kind === "index" ? "index" : "price";
     const ctx = JSON.stringify((body && body.ctx) || {}).slice(0, 3000);
-    const r = await aiCall([{ type: "text", text: EXPLAIN_PROMPT(kind, ctx) }], { ...opts, maxTokens: 400 });
+    const lang = body && ["ru", "en"].includes(body.lang) ? body.lang : "uz";
+    const note = { uz: "", ru: "\n\nВажно: весь ответ напиши на русском языке.", en: "\n\nImportant: write the whole answer in English." }[lang];
+    const r = await aiCall([{ type: "text", text: EXPLAIN_PROMPT(kind, ctx) + note }], { ...opts, maxTokens: 500 });
     return { text: r.text.trim().slice(0, 1500) };
   }
   if (route === "selftest") {
