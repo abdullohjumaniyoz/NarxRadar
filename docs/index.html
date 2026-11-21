@@ -435,7 +435,7 @@ const REF0 = {"v":2,"week":"2026-11-11","prev":"2026-11-04","yearAgo":"2025-11-1
 let REF = REF0, P = {};
 function indexRef() { P = Object.fromEntries(REF.products.map(p => [p.c, p])); }
 indexRef();
-const APP_VERSION = "2.2.1";
+const APP_VERSION = "2.2.2";
 
 /* k: "r" — narx.stat.uz rasmiy oʻrtacha; "s" — narxtahlil.uz supermarket narxi; "x" — rasmiy manba yoʻq, faqat xaridorlar xabarlari */
 const KIND = { r: "Rasmiy", s: "Supermarket", x: "Xalq narxi" };
@@ -734,7 +734,7 @@ function renderLocChip() {
 /* ============ Server (ixtiyoriy): AI va umumiy baza ============ */
 /* Server manzili: Netlify'da avtomatik "/api". Boshqa joyda boʻlsa, index.html'dan oldin window.NARX_API = "https://.../api" deb yozing. */
 const API = String(window.NARX_API || "/api").replace(/\/$/, "");
-const CAP = { sample: null, img: false, db: null, canWrite: null, dl: null, dbReady: false, dbErr: null, refFromDb: false, srv: null };
+const CAP = { sample: null, img: false, db: null, canWrite: null, dl: null, dbReady: false, dbErr: null, refFromDb: false, srv: null, srvErr: null, srvAt: 0, nat: null };
 let DBALL = [], LOCAL = LS.get("nr-local", []);
 function validRep(x) { return x && typeof x === "object" && P[x.c] && typeof x.up === "number" && isFinite(x.up) && x.up > 0 && typeof x.t === "string" && !isNaN(Date.parse(x.t)) && typeof x.id === "string"; }
 let ALL_K = "", ALL_V = [];
@@ -788,14 +788,30 @@ async function syncPending() {
   }
   syncing = false; LS.set("nr-local", LOCAL); pullReports();
 }
+/* Server bilan aloqa: ilova ochilganda internet sekin yoki yoʻq boʻlsa, oʻzi qayta urinadi
+   (5 s, 15 s, 45 s, 2 daq) va ilovaga qaytilganda yoki internet tiklanganda yana tekshiradi. */
+let SRV_LOOP = false, SRV_TRY = 0, SRV_T = null;
 async function initServer() {
   if (location.protocol === "file:" || /SIZNING-SAYT/.test(API)) { renderAll(); return; }
-  try { const h = await api("/health", undefined, 8000); if (h && h.ok) { CAP.db = !!h.db; CAP.srv = h.v || "1"; if (h.ai) { CAP.sample = true; CAP.img = true; } } }
-  catch (e) { CAP.db = null; }
-  if (CAP.db) { await pullReports(); syncPending(); setInterval(() => { if (document.visibilityState === "visible") { pullReports(); syncPending(); } }, 60000); }
-  renderAll();
+  if (initServer.busy) return; initServer.busy = true; clearTimeout(SRV_T);
+  const first = !CAP.srvAt, was = CAP.srv;
+  try {
+    try {
+      const h = await api("/health", undefined, 12000);
+      if (h && h.ok) { CAP.db = !!h.db; CAP.srv = h.v || "1"; CAP.srvErr = null; if (h.ai) { CAP.sample = true; CAP.img = true; } }
+      else { CAP.db = null; CAP.srvErr = "server"; }
+    } catch (e) { CAP.db = null; CAP.srvErr = navigator.onLine === false ? "oflayn" : (e && e.code) || "xato"; }
+    CAP.srvAt = Date.now();
+    if (CAP.db) {
+      await pullReports(); syncPending();
+      if (!SRV_LOOP) { SRV_LOOP = true; setInterval(() => { if (document.visibilityState === "visible") { pullReports(); syncPending(); } }, 60000); }
+    } else if (SRV_TRY < 4) SRV_T = setTimeout(initServer, [5, 15, 45, 120][SRV_TRY++] * 1000);
+  } finally { initServer.busy = false; }
+  if (first || CAP.srv !== was) renderAll();
 }
-window.addEventListener("online", () => syncPending());
+function serverAgain() { if (!CAP.srv) { SRV_TRY = 0; initServer(); } }
+window.addEventListener("online", () => { serverAgain(); syncPending(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") serverAgain(); });
 
 /* ============ Namunaviy yorliqlar (sinov uchun) ============ */
 function drawTag(kind) {
@@ -1333,10 +1349,18 @@ function renderData() {
     if ((edge || node) && ai) out.innerHTML = `<div class="ai"><b>Hammasi ishlayapti</b>Server ulangan, rasm va matn tahlil qilinadi. Javob: ${sec} soniya.</div>`;
     else if (edge || node) out.innerHTML = `<p class="note warn">Server ishlayapti, lekin rasm tahlili ulanmagan. Narxni yozib yuborish ishlaydi.</p>`;
     else out.innerHTML = `<p class="note warn">Serverga ulanib boʻlmadi. Internetni tekshiring; ilova oflayn rejimda ishlashda davom etadi.</p>`;
+    if ((edge || node) && !CAP.srv) serverAgain();
   };
   $("#m-loc").onclick = () => openLocSheet(true);
   $("#m-clear").onclick = () => { if (!confirm("Shu telefondagi barcha xabarlar oʻchirilsinmi?")) return; LOCAL = []; LS.set("nr-local", []); allReset(); toast("Shu telefondagi xabarlar oʻchirildi."); renderData(); };
   if (adm) wireAdmin();
+}
+let ADM_OUT = ""; /* tugma natijasi sahifa qayta chizilganda ham koʻrinib turadi */
+const srvErrText = c => ({ timeout: "javob kelmadi (internet sekin)", unavailable: "serverga yetib boʻlmadi", oflayn: "internet yoʻq", server: "server xatosi" })[c] || c || "nomaʼlum";
+function diagLine() {
+  const o = LS.get("nr-ota-log", null), tm = t => new Date(t).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const srv = CAP.srv ? `ulangan (v${esc(CAP.srv)})` : CAP.srvAt ? `ulanmagan — ${esc(srvErrText(CAP.srvErr))}` : "tekshirilmoqda…";
+  return `Ilova: ${esc(APP_VERSION)}${NATIVE ? ` · APK: ${esc(CAP.nat || "?")}` : " · sayt"}<br>Server: ${srv}${NATIVE ? `<br>Yangilanish: ${o ? `${tm(o.at)} — ${esc(o.s)}` : "hali tekshirilmagan"}` : ""}`;
 }
 /* Ishlab chiquvchi rejimi: Versiya qatorini 4 soniyada 7 marta bosing */
 function adminHTML(all) {
@@ -1352,6 +1376,10 @@ function adminHTML(all) {
       <div class="tile"><b class="num">${prodsCovered}/${REF.products.length}</b><span>Xabar bor mahsulotlar</span></div>
       <div class="tile"><b class="num">${CAP.srv ? esc(CAP.srv) : "—"}</b><span>Server versiyasi</span></div>
     </div>
+    <h3>Ulanish va yangilanish</h3>
+    <p class="sub" style="margin:0" id="m-diag">${diagLine()}</p>
+    ${NATIVE ? `<div class="row2"><button class="btn2" id="m-ota">Yangilanishni tekshirish</button><button class="btn2" id="m-srv">Serverni qayta ulash</button></div>` : `<div class="row2"><button class="btn2" id="m-srv">Serverni qayta ulash</button></div>`}
+    <div id="m-ota-out">${ADM_OUT}</div>
     <div class="row2"><button class="btn2" id="m-csv">${IC.dl} CSV</button><button class="btn2" id="m-copy">CSV nusxalash</button></div>
     ${all.length ? `<div class="tbwrap"><table class="tb"><thead><tr><th>Vaqt</th><th>Mahsulot</th><th class="r">Narx</th><th>Joy</th><th>Holat</th></tr></thead><tbody>${all.slice(0, 15).map(x => `<tr><td class="num">${new Date(x.t).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td><td>${esc(P[x.c].n)}</td><td class="r num">${fmt(x.up)}</td><td>${esc(locLine(x.loc))}</td><td>${accepted(x) ? "qabul" : "rad"}</td></tr>`).join("")}</tbody></table></div>` : ""}
     <h3>Bu maʼlumot kimga kerak</h3>
@@ -1374,6 +1402,19 @@ function wireAdmin() {
   const csv = $("#m-csv"); if (csv) { csv.style.display = CAP.dl && !NATIVE ? "" : "none"; csv.onclick = async () => { try { await CAP.dl.save({ filename: `narxradar-${new Date().toISOString().slice(0, 10)}.csv`, data: toCSV() }); } catch (e) { toast("Yuklab olish bekor qilindi."); } }; }
   const cp = $("#m-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(toCSV()); toast("CSV nusxalandi."); } catch (e) { toast("Nusxalash bloklandi."); } };
   const off = $("#m-adm-off"); if (off) off.onclick = () => { LS.set("nr-admin", 0); renderData(); };
+  const ob = $("#m-ota"); if (ob) ob.onclick = async () => {
+    const out = $("#m-ota-out"); ob.disabled = true; out.innerHTML = statusHTML("Yangi versiya tekshirilmoqda…", "");
+    const r = await otaCheck(true); ob.disabled = false;
+    ADM_OUT = `<p class="note${/yuklab olindi|tayyor|eng soʻnggi/.test(r || "") ? "" : " warn"}">${esc(r || "Tekshirildi.")}</p>`;
+    const o2 = $("#m-ota-out") || out; o2.innerHTML = ADM_OUT; const d = $("#m-diag"); if (d) d.innerHTML = diagLine();
+  };
+  const sb = $("#m-srv"); if (sb) sb.onclick = async () => {
+    const out = $("#m-ota-out"); sb.disabled = true; out.innerHTML = statusHTML("Server tekshirilmoqda…", "");
+    SRV_TRY = 4; await initServer(); sb.disabled = false;
+    ADM_OUT = CAP.srv ? `<div class="ai"><b>Ulandi</b>Server v${esc(CAP.srv)}, ${ALL().length} ta xabar.</div>` : `<p class="note warn">Ulanmadi: ${esc(srvErrText(CAP.srvErr))}.</p>`;
+    const o2 = $("#m-ota-out") || out; o2.innerHTML = ADM_OUT;
+    const d = $("#m-diag"); if (d) d.innerHTML = diagLine();
+  };
   const del = $("#m-admkey-del"); if (del) del.onclick = () => { LS.set("nr-admkey", ""); toast("Parol telefondan oʻchirildi."); renderData(); };
   const sy = $("#m-offsync"); if (sy) sy.onclick = async () => {
     const inp = $("#m-admkey"), v = inp ? inp.value.trim() : "", out = $("#m-offout");
@@ -1813,7 +1854,7 @@ if (APPN) try {
     else if (TAB !== "asosiy") setTab("asosiy");
     else if (APPN.minimizeApp) APPN.minimizeApp(); else if (APPN.exitApp) APPN.exitApp();
   });
-  APPN.addListener("resume", () => { otaCheck(false); });
+  APPN.addListener("resume", () => { otaCheck(false); serverAgain(); });
 } catch (e) { }
 /* Yangi versiya ilova qayta ochilganda oʻrnatiladi (rasm olish yoki yozish paytida ilova toʻsatdan qayta yuklanmaydi).
    Agar yangi versiya ochilmasa, telefon oldingisiga qaytadi va bu versiya boshqa sinab koʻrilmaydi. */
@@ -1825,22 +1866,32 @@ async function otaApplyPending() {
   LS.set("nr-ota", { ...pend, tries: (pend.tries || 0) + 1 });
   try { await UPDN.set({ id: pend.id }); return true; } catch (e) { LS.set("nr-ota", null); return false; }
 }
+/* Oxirgi tekshiruv natijasi ishlab chiquvchi rejimida koʻrinadi (muammoni telefon ekranidan aniqlash uchun) */
+const otaLog = (s, ok) => { LS.set("nr-ota-log", { at: Date.now(), s, ok: !!ok }); return s; };
 async function otaCheck(force) {
-  if (!UPDN || !SITE) return;
-  if (!force && Date.now() - LS.get("nr-ota-at", 0) < 30 * 60e3) return;
-  LS.set("nr-ota-at", Date.now());
-  let j = null;
-  try { const r = await fetch(SITE + "/ota/latest.json", { cache: "no-store" }); j = r.ok ? await r.json() : null; } catch (e) { j = null; }
-  if (!j || !j.version || !j.url || !vgt(j.version, APP_VERSION) || LS.get("nr-ota-bad", "") === j.version) return;
-  let nat = "0"; try { const c = await UPDN.current(); nat = (c && c.native) || "0"; } catch (e) { }
-  if (j.minNative && vgt(j.minNative, nat)) { UPD_STATE = { kind: "native", v: j.version }; if (!SHEET_LOCK) render(TAB); return; }
-  const pend = LS.get("nr-ota", null);
-  if (pend && pend.v === j.version) { UPD_STATE = { kind: "ready", v: j.version }; if (!SHEET_LOCK) render(TAB); return; }
+  if (!UPDN || !SITE) return otaLog(!UPDN ? "yangilash moduli yoʻq (eski APK)" : "faqat telefon ilovasida");
+  if (otaCheck.busy) return "tekshirilmoqda";
+  if (!force && Date.now() - LS.get("nr-ota-at", 0) < 30 * 60e3) return "";
+  otaCheck.busy = true;
   try {
-    const b = await UPDN.download({ url: j.url, version: j.version });
-    LS.set("nr-ota", { v: j.version, id: b.id, tries: 0 });
-    UPD_STATE = { kind: "ready", v: j.version }; if (!SHEET_LOCK) render(TAB);
-  } catch (e) { }
+    let j = null, err = "";
+    try { const r = await fetch(SITE + "/ota/latest.json", { cache: "no-store" }); if (r.ok) j = await r.json(); else err = "HTTP " + r.status; }
+    catch (e) { err = navigator.onLine === false ? "internet yoʻq" : "serverga ulanib boʻlmadi"; }
+    if (!j || !j.version || !j.url) return otaLog(err || "javob notoʻgʻri");
+    LS.set("nr-ota-at", Date.now());
+    if (!vgt(j.version, APP_VERSION)) return otaLog(`eng soʻnggi versiya (${APP_VERSION})`, true);
+    if (LS.get("nr-ota-bad", "") === j.version) return otaLog(`${j.version} ochilmadi, oʻtkazib yuborildi`);
+    let nat = "0"; try { const c = await UPDN.current(); nat = (c && c.native) || "0"; CAP.nat = nat; } catch (e) { }
+    if (j.minNative && vgt(j.minNative, nat)) { UPD_STATE = { kind: "native", v: j.version }; if (!SHEET_LOCK) render(TAB); return otaLog(`${j.version} uchun yangi APK kerak`); }
+    const pend = LS.get("nr-ota", null);
+    if (pend && pend.v === j.version) { UPD_STATE = { kind: "ready", v: j.version }; if (!SHEET_LOCK) render(TAB); return otaLog(`${j.version} tayyor, qayta ochilganda oʻrnatiladi`, true); }
+    try {
+      const b = await UPDN.download({ url: j.url, version: j.version });
+      LS.set("nr-ota", { v: j.version, id: b.id, tries: 0 });
+      UPD_STATE = { kind: "ready", v: j.version }; if (!SHEET_LOCK) render(TAB);
+      return otaLog(`${j.version} yuklab olindi`, true);
+    } catch (e) { return otaLog(`${j.version} yuklab olinmadi: ${String(e && (e.message || e.code) || "xato").slice(0, 80)}`); }
+  } finally { otaCheck.busy = false; }
 }
 function updNow() {
   const pend = LS.get("nr-ota", null); if (!UPDN || !pend) return;
@@ -1848,6 +1899,7 @@ function updNow() {
   toast("Yangilanmoqda…");
   UPDN.set({ id: pend.id }).catch(() => { LS.set("nr-ota", null); UPD_STATE = null; render(TAB); toast("Yangilab boʻlmadi. Keyinroq yana urinadi."); });
 }
+if (UPDN) { UPDN.current().then(c => { CAP.nat = (c && c.native) || null; }).catch(() => { }); window.addEventListener("online", () => otaCheck(false)); }
 if (UPDN) otaApplyPending().then(applied => { if (!applied) setTimeout(() => otaCheck(true), 3000); }).catch(() => { });
 
 
