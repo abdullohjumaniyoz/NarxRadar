@@ -10,6 +10,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,6 +48,20 @@ jobs:
         with:
           name: NarxRadar-test-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      # Maxfiy (draft) reliz: faqat repo egasi koʻradi, ommaga chiqmaydi.
+      # Claude shu yerdan APK'ni olib, suhbatga yubora oladi.
+      - name: Test APK'ni maxfiy relizga yuklash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk NarxRadar-test.apk
+          for id in $(gh api "repos/$REPO/releases" --jq '.[] | select(.draft and .name=="NarxRadar test APK") | .id'); do
+            gh api -X DELETE "repos/$REPO/releases/$id"
+          done
+          gh release create test-apk NarxRadar-test.apk --repo "$REPO" --draft --target "$GITHUB_SHA" \
+            --title "NarxRadar test APK" --notes "Faqat egasi uchun test APK. Ommaga tarqatmang."
 
       - name: Imzo kalitini tiklash
         if: env.HAS_KEY == 'true'
