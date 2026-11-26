@@ -8,7 +8,7 @@
     "sync": "cap sync",
     "android": "cap sync android && cap open android",
     "ios": "cap sync ios && cap open ios",
-    "icons": "capacitor-assets generate --iconBackgroundColor \"#0a7c76\" --iconBackgroundColorDark \"#0a7c76\" --splashBackgroundColor \"#eef2f1\" --splashBackgroundColorDark \"#0c1517\""
+    "icons": "capacitor-assets generate --iconBackgroundColor \"#1D3A88\" --iconBackgroundColorDark \"#1D3A88\" --splashBackgroundColor \"#1D3A88\" --splashBackgroundColorDark \"#0B1430\""
   },
   "engines": {
     "node": ">=22"

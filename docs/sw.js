@@ -1,6 +1,6 @@
 /* NarxRadar service worker: ilova internet yoʻq joyda ham ochiladi */
 const V = "narxradar-v4";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./ref.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./fonts/onest-latin-wght-normal.woff2", "./fonts/unbounded-latin-wght-normal.woff2"];
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./ref.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./fonts/golos-text-latin-wght-normal.woff2", "./fonts/geologica-latin-wght-normal.woff2"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {

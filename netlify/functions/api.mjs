@@ -255,7 +255,7 @@ const DAILY_AI_IP = Number(ENV("DAILY_AI_PER_IP") || 80);
 const DAILY_PER_IP = Number(ENV("DAILY_REPORTS_PER_IP") || 60);
 const REGIONS = new Set(["TOSS", "TOS", "AND", "BUX", "FAR", "JIZ", "NAM", "NAV", "QAS", "QQR", "SAM", "SIR", "SUR", "XOR"]);
 const MAX_AGG = 2000;
-const VERSION = "2.5.0";
+const VERSION = "2.6.0";
 
 const store = () => getStore("narxradar");
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, x-cap-key, x-admin-key", "access-control-max-age": "86400" };
