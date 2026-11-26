@@ -34,6 +34,9 @@ const PROVIDER =
   AI_PROVIDER === "gemini" && GEMINI_KEY ? "gemini" :
   CLAUDE_OWN ? "claude" : GEMINI_OWN ? "gemini" :
   KEY ? "claude" : GEMINI_KEY ? "gemini" : null;
+/* Ikkala kalit boʻlsa, ikkinchisi zaxira: biri band yoki ishlamasa, soʻrov ikkinchisiga oʻtadi */
+const PROVIDERS = uniq0([PROVIDER, KEY ? "claude" : null, GEMINI_KEY ? "gemini" : null]);
+function uniq0(a) { return [...new Set(a.filter(Boolean))]; }
 const VIA = PROVIDER === "claude" ? (CLAUDE_OWN ? "direct" : "netlify-gateway") : PROVIDER === "gemini" ? (GEMINI_OWN ? "direct" : "netlify-gateway") : null;
 /* Faqat egasi uchun: ADMIN_KEY (kamida 12 belgi) Netlify muhitida. Kalit URL (?key=) yoki x-admin-key sarlavhasi bilan beriladi. */
 const ADMIN_KEY = String(ENV("ADMIN_KEY") || "");
@@ -79,14 +82,31 @@ async function tfetch(url, opts, deadline) {
   finally { clearTimeout(t); }
 }
 
-async function claude(content, maxTokens, deadline) {
-  const r = await tfetch(`${ANTHROPIC_BASE}/v1/messages`, {
-    method: "POST", headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, messages: [{ role: "user", content }] })
-  }, deadline);
-  if (!r.ok) { const t = await r.text().catch(() => ""); throw err(`claude ${r.status}: ${t.slice(0, 200)}`, r.status); }
-  const j = await r.json();
-  return (j.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+async function claude(content, maxTokens, deadline, trace) {
+  let last = err("claude", 500);
+  /* 529 (band) yoki 500: qisqa kutib yana bir marta */
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let r;
+    try {
+      r = await tfetch(`${ANTHROPIC_BASE}/v1/messages`, {
+        method: "POST", headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, messages: [{ role: "user", content }] })
+      }, deadline);
+    } catch (e) { last = e; if (trace) trace.push(`${MODEL}: ${e.message}`); break; }
+    if (r.ok) {
+      const j = await r.json();
+      const txt = (j.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+      if (trace) trace.push(`${MODEL}: ok`);
+      if (txt) return txt;
+      last = err(`claude ${MODEL}: boʻsh javob`, 502); break;
+    }
+    const t = await r.text().catch(() => "");
+    last = err(`claude ${r.status}: ${t.slice(0, 180)}`, r.status === 529 ? 503 : r.status);
+    if (trace) trace.push(`${MODEL}: ${r.status}`);
+    if ((r.status === 529 || r.status === 500 || r.status === 503) && attempt === 0 && deadline - Date.now() > 6000) { await sleep(900); continue; }
+    break;
+  }
+  throw last;
 }
 
 async function geminiOnce(model, parts, maxTokens, json, think, deadline) {
@@ -99,15 +119,18 @@ async function geminiOnce(model, parts, maxTokens, json, think, deadline) {
   }, deadline);
 }
 const RETRY_NEXT = new Set([403, 404, 408, 429, 500, 502, 503, 504]);
+/* Google "high demand" (503) yoki ichki xato (500): shu modelni qisqa kutib yana bir marta sinash */
+const RETRY_SAME = new Set([500, 503]);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function gemini(content, maxTokens, json, models, deadline, trace) {
   const parts = content.map(c => c.type === "image" ? { inline_data: { mime_type: c.source.media_type, data: c.source.data } } : { text: c.text });
   let last = err("no model", 500);
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
     let think = THINK(model);
-    /* Oxirgisidan boshqa modelga koʻpi bilan 15 s: band yoki sekin boʻlsa, keyingisiga oʻtiladi */
-    const cap = i < models.length - 1 ? Math.min(deadline, Date.now() + 15000) : deadline;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    /* Oxirgisidan boshqa modelga koʻpi bilan 10 s: band yoki sekin boʻlsa, keyingisiga oʻtiladi */
+    const cap = i < models.length - 1 ? Math.min(deadline, Date.now() + 10000) : deadline;
+    for (let attempt = 0; attempt < 3; attempt++) {
       let r;
       try { r = await geminiOnce(model, parts, maxTokens, json, think, cap); }
       catch (e) { last = e; if (trace) trace.push(`${model}: ${e.message}`); break; }
@@ -123,6 +146,7 @@ async function gemini(content, maxTokens, json, models, deadline, trace) {
       last = err(`gemini ${model} ${r.status}: ${t.slice(0, 180)}`, r.status);
       if (trace) trace.push(`${model}: ${r.status}`);
       if (r.status === 400 && think) { think = null; continue; } /* fikrlash sozlamasini bilmasa, usiz qayta */
+      if (RETRY_SAME.has(r.status) && attempt < 2 && cap - Date.now() > 5000) { await sleep(700 + attempt * 900); continue; }
       break;
     }
     if (last.status === 504 && deadline - Date.now() < 1500) break;
@@ -132,11 +156,27 @@ async function gemini(content, maxTokens, json, models, deadline, trace) {
 }
 /* Rasm ham, matn ham avval eng tez model bilan oʻqiladi (odatda 2–4 s). Kuchliroq 3.8 Flash
    faqat zaxira: tez model yorliqni topa olmasa yoki band boʻlsa ishlatiladi. */
-async function aiCall(content, { maxTokens = 700, json = false, image = false, deadline, edge = false, trace, models: only } = {}) {
-  if (PROVIDER === "claude") return { text: await claude(content, maxTokens, deadline), model: MODEL };
-  if (PROVIDER !== "gemini") throw err("no_ai", 503);
-  const models = only || chain(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-3.8-flash"]);
-  return gemini(content, maxTokens, json, models, deadline, trace);
+async function aiCall(content, { maxTokens = 700, json = false, image = false, deadline, edge = false, trace, models: only, provider } = {}) {
+  const list = provider ? PROVIDERS.filter(x => x === provider) : only ? ["gemini"] : PROVIDERS;
+  if (!list.length) throw err("no_ai", 503);
+  let last = err("no_ai", 503);
+  for (let i = 0; i < list.length; i++) {
+    const pv = list[i], more = i < list.length - 1;
+    /* Zaxira provayderga vaqt qolishi uchun birinchisiga chegara: Claude 20 s, Gemini zanjiri 30 s */
+    const dl = more ? Math.min(deadline, Date.now() + (pv === "claude" ? 20000 : 30000)) : deadline;
+    if (dl - Date.now() < 2500) break;
+    try {
+      if (pv === "claude") return { text: await claude(content, maxTokens, dl, trace), model: MODEL, provider: "claude" };
+      const models = only || chain(["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]);
+      const r = await gemini(content, maxTokens, json, models, dl, trace);
+      return { ...r, provider: "gemini" };
+    } catch (e) {
+      last = e;
+      if (trace && more) trace.push(`${pv} → zaxira`);
+      /* 400 (soʻrovning oʻzi notoʻgʻri) boshqa provayderda ham takrorlanishi mumkin, lekin baribir sinab koʻramiz */
+    }
+  }
+  throw last;
 }
 
 const str = (v, n) => (typeof v === "string" ? v.replace(/[\u0000-\u001f<>]/g, "").slice(0, n) : null);
@@ -150,11 +190,15 @@ async function runTask(route, body, opts) {
     if (typeof image !== "string" || image.length < 100 || image.length > 6_000_000) return { error: "invalid" };
     const mt = MIME_OK.includes(mime) ? mime : "image/jpeg";
     const content = [{ type: "image", source: { type: "base64", media_type: mt, data: image } }, { type: "text", text: READ_PROMPT() }];
-    const r = await aiCall(content, { ...opts, maxTokens: 800, json: true, image: true });
+    const trace = [];
+    let r;
+    try { r = await aiCall(content, { ...opts, maxTokens: 800, json: true, image: true, trace }); }
+    catch (e) { e.trace = trace; console.log(JSON.stringify({ ai: "read", ok: false, ms: Date.now() - t0, trace })); throw e; }
+    if (Date.now() - t0 > 6000 || trace.length > 1) console.log(JSON.stringify({ ai: "read", ok: true, ms: Date.now() - t0, trace }));
     let j = parseJSON(r.text) || { is_price_tag: false, items: [] }, model = r.model;
     const found = x => x && x.is_price_tag && Array.isArray(x.items) && x.items.length && x.items[0].price_uzs;
     /* Tez model narxni topa olmasa, vaqt yetsa kuchliroq model bilan bir marta qayta oʻqiladi */
-    if (!found(j) && PROVIDER === "gemini" && model !== "gemini-3.8-flash" && opts.deadline - Date.now() > 20000) {
+    if (!found(j) && GEMINI_KEY && model !== "gemini-3.8-flash" && opts.deadline - Date.now() > 20000) {
       try { const r2 = await aiCall(content, { ...opts, maxTokens: 800, json: true, image: true, models: ["gemini-3.8-flash"] }); const j2 = parseJSON(r2.text); if (found(j2)) { j = j2; model = r2.model; } } catch (e) { }
     }
     j._m = model; j._ms = Date.now() - t0;
@@ -178,13 +222,13 @@ async function runTask(route, body, opts) {
     const trace = [];
     const content = body && body.img ? [{ type: "image", source: { type: "base64", media_type: "image/jpeg", data: TEST_IMG } }, { type: "text", text: READ_PROMPT() }] : [{ type: "text", text: 'Reply with JSON only: {"ok": true}' }];
     try {
-      const r = await aiCall(content, { ...opts, maxTokens: body && body.img ? 800 : 50, json: true, image: !!(body && body.img), trace });
-      return { ok: true, provider: PROVIDER, via: VIA, model: r.model, ms: Date.now() - t0, trace, result: body && body.img ? parseJSON(r.text) : r.text.slice(0, 80) };
-    } catch (e) { return { ok: false, provider: PROVIDER, ms: Date.now() - t0, trace, error: String(e.message).slice(0, 300) }; }
+      const r = await aiCall(content, { ...opts, maxTokens: body && body.img ? 800 : 50, json: true, image: !!(body && body.img), trace, provider: body && body.p || undefined });
+      return { ok: true, provider: r.provider || PROVIDER, providers: PROVIDERS, via: VIA, model: r.model, ms: Date.now() - t0, trace, result: body && body.img ? parseJSON(r.text) : r.text.slice(0, 80) };
+    } catch (e) { return { ok: false, provider: PROVIDER, providers: PROVIDERS, ms: Date.now() - t0, trace, error: String(e.message).slice(0, 300) }; }
   }
   return { error: "not_found" };
 }
-const errOut = e => ({ error: e && e.status === 429 ? "rate_limited" : e && e.status === 504 ? "timeout" : e && e.message === "no_ai" ? "no_ai" : "server", message: String((e && e.message) || e).slice(0, 240) });
+const errOut = e => ({ error: e && e.status === 429 ? "rate_limited" : e && e.status === 504 ? "timeout" : e && (e.status === 503 || e.status === 500) ? "busy" : e && e.message === "no_ai" ? "no_ai" : "server", message: String((e && e.message) || e).slice(0, 240), ...(e && Array.isArray(e.trace) && e.trace.length ? { trace: e.trace.map(x => String(x).slice(0, 80)).slice(0, 12) } : {}) });
 
 /* Oqim: darhol boʻsh joy, keyin har 2 soniyada boʻsh joy, oxirida JSON. Telefon JSON.parse boʻsh joylarni eʼtiborsiz qoldiradi. */
 function streamJSON(work, CORS) {
@@ -211,7 +255,7 @@ const DAILY_AI_IP = Number(ENV("DAILY_AI_PER_IP") || 80);
 const DAILY_PER_IP = Number(ENV("DAILY_REPORTS_PER_IP") || 60);
 const REGIONS = new Set(["TOSS", "TOS", "AND", "BUX", "FAR", "JIZ", "NAM", "NAV", "QAS", "QQR", "SAM", "SIR", "SUR", "XOR"]);
 const MAX_AGG = 2000;
-const VERSION = "2.4.0";
+const VERSION = "2.5.0";
 
 const store = () => getStore("narxradar");
 const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, x-cap-key, x-admin-key", "access-control-max-age": "86400" };
@@ -367,7 +411,14 @@ async function rebuildOfficialSummary() {
     const pp = Pv && Pv.products[c], yy = Y && Y.products[c];
     items[c] = { p: x.p, w: pp ? x.p - pp.p : null, y: yy ? x.p - yy.p : null, r: x.r, rl: x.rl, rh: x.rh, mn: x.mn, mx: x.mx, nd: x.nd, n: x.n, u: x.u };
   }
-  const sum = { week, prev, yearAgo, dates: dates.slice(-60), items, source: "narx.stat.uz ochiq maʼlumoti", updated: new Date().toISOString() };
+  /* Prognoz va signal uchun: oxirgi 13 haftaning respublika narxlari (mahsulot → [[sana, narx], …]) */
+  const hist = {};
+  for (const d of dates.filter(d => d <= week).slice(-13)) {
+    const doc = d === week ? W : d === prev ? Pv : await s.get(`off/w/${d}`, { type: "json" }).catch(() => null);
+    if (!doc || !doc.products) continue;
+    for (const [c, x] of Object.entries(doc.products)) if (x && x.p) (hist[c] ||= []).push([d, Math.round(x.p)]);
+  }
+  const sum = { week, prev, yearAgo, dates: dates.slice(-60), items, hist, source: "narx.stat.uz ochiq maʼlumoti", updated: new Date().toISOString() };
   await s.setJSON("off/summary", sum);
   OFF_CACHE.data = sum; OFF_CACHE.at = Date.now();
   return sum;
@@ -390,7 +441,7 @@ export default async (req, context) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   try {
     const admin = isAdmin(url, req);
-    if (route === "health") return json(admin ? { ok: true, v: VERSION, ai: !!PROVIDER, provider: PROVIDER, via: VIA, db: true, edge: "/ai", admin: true } : { ok: true, v: VERSION, ai: !!PROVIDER, db: true });
+    if (route === "health") return json(admin ? { ok: true, v: VERSION, ai: !!PROVIDER, provider: PROVIDER, providers: PROVIDERS, via: VIA, db: true, edge: "/ai", admin: true } : { ok: true, v: VERSION, ai: !!PROVIDER, db: true });
 
     /* Edge funksiya uchun kunlik limit hisoblagichi */
     if (route === "cap" && req.method === "POST") {
